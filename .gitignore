@@ -4,9 +4,5 @@ node_modules/
 .env*
 !.env.example
 *.tsbuildinfo
-
-.vercel
-.env*
-
 supabase/.temp/
 supabase/.branches/
