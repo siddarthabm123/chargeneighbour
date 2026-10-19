@@ -1,0 +1,29 @@
+{
+  "name": "chargeneighbour",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "next dev --port 5180",
+    "build": "next build",
+    "start": "next start --port 5180",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "lucide-react": "1.31.0",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.118.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3"
+  }
+}
