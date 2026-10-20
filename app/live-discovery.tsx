@@ -232,7 +232,7 @@ export default function LiveDiscovery() {
     setView("list");
     setMode("nearby");
     if (!position) {
-      if (!locating) locate();
+      if (!stations.length && !locating) locate();
     } else if (area !== "Your location")
       void loadStations("Your location", position);
     document
@@ -601,7 +601,13 @@ export default function LiveDiscovery() {
                   : "Nearest first from your GPS location"}
               </span>
             ) : (
-              <span>Use my location to see distances from you.</span>
+              <button
+                className="inline-link"
+                onClick={locate}
+                disabled={busy || locating}
+              >
+                Add distances from my location
+              </button>
             )}
           </div>
           {busy ? (
