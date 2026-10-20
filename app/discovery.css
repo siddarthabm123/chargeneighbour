@@ -515,6 +515,104 @@
 .station-photo-dialog::backdrop {
   background: #10291fd9;
 }
+.demo-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 22px;
+  margin-bottom: 24px;
+  border: 1px solid #cbd8bc;
+  border-radius: 10px;
+  background: #eff4e7;
+}
+.demo-entry p {
+  margin: 6px 0 0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.demo-label {
+  color: #66501d;
+  background: #fff0c9;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+.station-demo h4 {
+  font-size: 26px;
+  margin: 18px 0 10px;
+}
+.station-demo .demo-disclosure {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.demo-image {
+  height: clamp(220px, 32vw, 360px);
+  border-radius: 10px;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+}
+.demo-image > span {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  right: 12px;
+  width: fit-content;
+  padding: 8px 11px;
+  border-radius: 5px;
+  background: #163529ed;
+  color: white;
+  font-size: 13px;
+}
+.demo-gallery-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 24px;
+}
+.demo-gallery-controls .button {
+  padding: 12px;
+}
+.station-demo .demo-gallery-controls p {
+  margin: 0;
+  font-size: 15px;
+}
+.demo-specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}
+.demo-specs > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  gap: 7px;
+  padding: 20px;
+}
+.demo-specs span {
+  flex-basis: 100%;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.demo-reviews {
+  margin-top: 28px;
+}
+.demo-reviews h4 small {
+  font-size: 15px;
+  font-weight: 400;
+}
+.real-photo-notice {
+  border-left: 3px solid #677c53;
+  padding-left: 15px;
+}
 .station-photo-dialog h3 {
   font-size: 28px;
   margin: 16px 45px 25px 0;

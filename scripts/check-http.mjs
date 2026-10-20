@@ -67,6 +67,21 @@ try {
       401,
       path,
     );
+  const demoHome = await (await fetch(base)).text();
+  assert.ok(
+    demoHome.includes("Try station demo"),
+    "Billing-free demo entry is present",
+  );
+  assert.equal(
+    (await fetch(base + "/images/neighbourhood-hero.webp")).status,
+    200,
+    "Local demo image is available without Google billing",
+  );
+  const demoStatus = await (await fetch(base + "/status")).text();
+  assert.ok(
+    demoStatus.includes("fictional reviews"),
+    "Service status labels demo content",
+  );
   const callback = await fetch(
     base + "/auth/callback?next=//untrusted.invalid",
     { redirect: "manual" },

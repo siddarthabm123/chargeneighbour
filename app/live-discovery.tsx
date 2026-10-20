@@ -32,6 +32,7 @@ import {
 
 type Position = Point & { accuracy: number; capturedAt: string };
 import StationMap from "./station-map";
+import StationDemo from "./station-demo";
 import { roadLabel, type RoadMetric, type RoadRoute } from "./lib/road-route";
 type MapMode = "nearby" | "you" | "station" | "route";
 export default function LiveDiscovery() {
@@ -63,7 +64,8 @@ export default function LiveDiscovery() {
     [roadRoute, setRoadRoute] = useState<RoadRoute | null>(null),
     [routeBusy, setRouteBusy] = useState(false),
     [routeError, setRouteError] = useState(""),
-    [photosOpen, setPhotosOpen] = useState(false);
+    [photosOpen, setPhotosOpen] = useState(false),
+    [demoPhotos, setDemoPhotos] = useState(false);
   const photoDialog = useRef<HTMLDialogElement>(null),
     roadRequest = useRef(0),
     roadController = useRef<AbortController | null>(null);
@@ -486,6 +488,25 @@ export default function LiveDiscovery() {
           <MapPin size={16} />
           Across India
         </span>
+      </div>
+      <div className="demo-entry">
+        <div>
+          <b>See how a charging stop comes together.</b>
+          <p>
+            Try the photo gallery, charger details and sample reviews. No
+            sign-in or location needed.
+          </p>
+        </div>
+        <button
+          className="button outline"
+          onClick={() => {
+            setDemoPhotos(true);
+            setPhotosOpen(true);
+          }}
+        >
+          <Camera size={18} />
+          Try station demo
+        </button>
       </div>
       <form className="live-search" onSubmit={search}>
         <label htmlFor="station-location">
@@ -1001,7 +1022,10 @@ export default function LiveDiscovery() {
                 </button>
                 <button
                   className="button outline"
-                  onClick={() => setPhotosOpen(true)}
+                  onClick={() => {
+                    setDemoPhotos(false);
+                    setPhotosOpen(true);
+                  }}
                 >
                   <Camera size={17} />
                   Explore station photos
@@ -1140,8 +1164,8 @@ export default function LiveDiscovery() {
                 <h3>Get a feel for your next stop.</h3>
                 <p>
                   Choose a station card to compare its connectors, power and
-                  reported availability. Explore Google’s photos, entrance
-                  details and reviews before travelling.
+                  reported availability. Try the station demo for sample image
+                  views and reviews while Google photos are being connected.
                 </p>
               </div>
             </div>
@@ -1161,11 +1185,19 @@ export default function LiveDiscovery() {
         >
           <X size={20} />
         </button>
-        <span className="google-maps-attribution" translate="no">
-          Google Maps
-        </span>
-        <h3 id="station-photos-title">{selected?.name} · station photos</h3>
-        {selected?.photos.length ? (
+        {!demoPhotos && selected?.source === "google" && (
+          <span className="google-maps-attribution" translate="no">
+            Google Maps
+          </span>
+        )}
+        <h3 id="station-photos-title">
+          {demoPhotos
+            ? "Explore a sample charging stop"
+            : `${selected?.name} · station photos`}
+        </h3>
+        {demoPhotos ? (
+          <StationDemo />
+        ) : selected?.photos.length ? (
           <div className="station-photo-grid">
             {selected.photos.map((photo, i) => (
               <figure key={photo.name}>
@@ -1195,11 +1227,13 @@ export default function LiveDiscovery() {
             ))}
           </div>
         ) : (
-          <p>
-            {selected?.source === "openstreetmap"
-              ? "Google photos, ratings and reviews are not connected for this community listing. They will appear here only after the Google integration is activated and an exact Google station is selected. No unrelated photos are substituted."
-              : "Google has not supplied station photos for this place."}
-          </p>
+          <>
+            <p className="real-photo-notice">
+              Photos of {selected?.name} are not available here yet. Below is a
+              separate demo of the photo and review experience.
+            </p>
+            <StationDemo />
+          </>
         )}
       </dialog>
       <p className="google-policy">

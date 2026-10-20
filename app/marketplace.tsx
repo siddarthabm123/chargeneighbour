@@ -304,7 +304,7 @@ export default function Marketplace({ user }: { user: User }) {
                 <MapPin size={15} />
               </span>
               <span>
-                Real Google map{" "}
+                Real station map{" "}
                 <span className="muted">· Host applications open</span>
               </span>
             </div>

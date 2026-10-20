@@ -33,6 +33,13 @@ export default function Status() {
           </dd>
         </div>
         <div>
+          <dt>Station demo</dt>
+          <dd>
+            Available without Google billing: AI concept gallery, example
+            charger details and clearly labelled fictional reviews
+          </dd>
+        </div>
+        <div>
           <dt>Host applications & interest</dt>
           <dd>
             Open; sign-in required. New hosts must attach a charger photo and
