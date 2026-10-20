@@ -16,16 +16,16 @@
 
 ## External dependencies still open
 
-| Dependency | Concrete action/evidence |
-| --- | --- |
-| Legal operator and contact | Supply the actual operator name and an email/domain controlled by the owner. A product brand or another business's details cannot substitute for this. |
-| Public email | Configure production SMTP using that domain, then verify delivery and same-browser login return with consenting Android/iPhone test users. Setting a flag is not provider activation. |
-| Host supply | Inspect and approve actual chargers, permissions, access, metering and safety, then offer real hours. No sample host is inserted into public inventory. |
-| Payments and settlements | Complete merchant onboarding and supervised capture/refund/meter reconciliation. Commercial gates remain closed. |
-| Hosting and route capacity | Confirm a plan permitting the intended commercial use and provision an approved routing/tile provider before broad advertising. Current public pilot route caps remain unchanged. Google billing may stay deferred. |
-| Operator account | Authorize the actual verified Supabase account UUID. No operator access is granted by matching an email address. |
+| Dependency                     | Concrete action/evidence                                                                                                                                                                                                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legal operator and contact     | Supply the actual operator name and an email/domain controlled by the owner. A product brand or another business's details cannot substitute for this.                                                                                                                            |
+| Public email                   | Configure production SMTP using that domain, then verify delivery and same-browser login return with consenting Android/iPhone test users. Setting a flag is not provider activation.                                                                                             |
+| Host supply                    | Inspect and approve actual chargers, permissions, access, metering and safety, then offer real hours. No sample host is inserted into public inventory.                                                                                                                           |
+| Payments and settlements       | Complete merchant onboarding and supervised capture/refund/meter reconciliation. Commercial gates remain closed.                                                                                                                                                                  |
+| Hosting and route capacity     | Confirm a plan permitting the intended commercial use and provision an approved routing/tile provider before broad advertising. Current public pilot route caps remain unchanged. Google billing may stay deferred.                                                               |
+| Operator account               | Authorize the actual verified Supabase account UUID. No operator access is granted by matching an email address.                                                                                                                                                                  |
 | Recovery and migration history | Verify Storage/Auth/provider backups and a supervised recovery. Reconcile the existing dashboard-applied SQL history before automated pushes. The connector currently exposes only the unrelated older project, so it must not be used to alter this project's migration history. |
-| Physical-device acceptance | Test camera/HEIC/JPEG, GPS permission/accuracy, moving/resuming, weak network, email-browser return and actual site arrival on Android and iPhone. Browser viewport checks alone cannot establish these outcomes. |
+| Physical-device acceptance     | Test camera/HEIC/JPEG, GPS permission/accuracy, moving/resuming, weak network, email-browser return and actual site arrival on Android and iPhone. Browser viewport checks alone cannot establish these outcomes.                                                                 |
 
 The owner answered “recommended” to the details request. That authorizes reasonable implementation choices, but supplies no real controlled domain, provider credentials, business identity or physical host evidence. No such facts have been invented.
 
@@ -33,4 +33,4 @@ The owner answered “recommended” to the details request. That authorizes rea
 
 TypeScript, production build, station/specification tests, bounded-request/signature checks, image/GPS/route checks, isolated PostgreSQL ownership/reservation/payment/restore checks and production HTTP checks pass. Public-photo unit cases deny missing consent, wrong owner/evidence/application, cancelled applications and suspended listings. The pitch's changed slides were visually checked, with unchanged slides pixel-identical to the previous reviewed release.
 
-Phone-viewport and live deployment checks follow publication. Real provider activation and physical charging remain the distinct acceptance items above.
+Live verification confirms healthy database access, denied access to unapproved photo IDs and the exact validated public deck checksum. At 390 × 844, search begins about 215 px from the top, compared with about 1,671 px before the release, and the page has no horizontal overflow. Search, selected-station/back controls and browser console checks pass. GitHub validation passed for the release. Real provider activation and physical charging remain the distinct acceptance items above.

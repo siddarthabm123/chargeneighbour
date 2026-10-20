@@ -760,15 +760,18 @@ export default function LiveDiscovery() {
           {connector || power
             ? "Unknown specifications do not confirm a connector/power match. "
             : ""}
-          Battery-swap names are excluded unless selected. Vehicle support and
-          free connectors require confirmation.
+          Confirm vehicle support and access. Named battery-swap sites are
+          excluded unless selected.
         </p>
       )}
       {message && (
-        <div className="station-notice" role="status">
-          <ShieldCheck size={20} />
+        <details className="station-notice">
+          <summary>
+            <ShieldCheck size={20} />
+            About these station results
+          </summary>
           <p>{message}</p>
-        </div>
+        </details>
       )}
       {routeError && (
         <p className="location-error" role="status">

@@ -151,9 +151,12 @@ export default function HostEvidenceInput({
       );
     } catch (error) {
       setMessage(
-        error instanceof Error
-          ? error.message
-          : "Could not upload the charger photo.",
+        error instanceof Error &&
+          ["TimeoutError", "AbortError"].includes(error.name)
+          ? "Upload stopped or took too long. Keep the form open, reconnect and try again. Uploading a photo alone does not submit an application."
+          : error instanceof Error
+            ? error.message
+            : "Could not upload the charger photo.",
       );
     } finally {
       setBusy(false);

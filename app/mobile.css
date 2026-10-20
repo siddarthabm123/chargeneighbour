@@ -41,6 +41,16 @@
   line-height: 1.7;
   margin: 12px 0 20px;
 }
+details.station-notice {
+  display: block;
+}
+.station-notice summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  min-height: 44px;
+}
 .compatibility-badge {
   display: block;
   width: fit-content;
@@ -197,6 +207,8 @@
   .real-map-card .map-title {
     padding: 12px 14px;
     gap: 8px;
+    flex-direction: row;
+    align-items: center;
   }
   .map-title b {
     font-size: 15px;
@@ -204,6 +216,9 @@
   .map-mode-controls {
     padding: 0 12px 10px;
     gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
   }
   .map-mode-controls button {
     min-height: 44px;
@@ -211,11 +226,10 @@
   }
   .real-map-card .controlled-map,
   .real-map-card iframe {
-    height: 290px;
+    height: 250px;
   }
   .real-map-card .map-help {
-    padding: 10px 12px;
-    font-size: 14px;
+    display: none;
   }
   .leaflet-control-zoom a {
     width: 44px !important;
@@ -276,6 +290,12 @@
   .station-detail {
     padding: 18px;
     scroll-margin-top: 15px;
+  }
+  .station-detail > h3 {
+    margin: 8px 0;
+  }
+  .station-detail .detail-eyebrow {
+    display: none;
   }
   .station-preview {
     padding: 18px;
