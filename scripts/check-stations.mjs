@@ -11,7 +11,52 @@ import {
   readableAddress,
   stationFromPhoton,
   distanceLabel,
+  stationCategory,
+  unknownSpecs,
+  canPublishHostPhoto,
 } from "../app/lib/stations.ts";
+
+assert.equal(stationCategory({ name: "Honda e:swap" }), "swap");
+assert.equal(stationCategory({ name: "Battery Swapping Station" }), "swap");
+assert.equal(stationCategory({ name: "Public charger" }), "charging");
+assert.equal(unknownSpecs({ connectors: [] }, "TYPE_2", 7), true);
+assert.equal(
+  unknownSpecs(
+    { connectors: [{ type: "TYPE_2", maxChargeRateKw: 7.2 }] },
+    "TYPE_2",
+    7,
+  ),
+  false,
+);
+const photoListing = { status: "approved", application_id: "application" },
+  photoApp = {
+    id: "application",
+    user_id: "supabase:owner",
+    status: "pending_review",
+    payload: { evidenceId: "photo", publicPhotoConsent: true },
+  },
+  photoEvidence = { id: "photo", user_id: "owner" };
+assert.equal(canPublishHostPhoto(photoListing, photoApp, photoEvidence), true);
+for (const [listing, app, evidence] of [
+  [{ ...photoListing, status: "suspended" }, photoApp, photoEvidence],
+  [photoListing, { ...photoApp, status: "cancelled" }, photoEvidence],
+  [
+    photoListing,
+    {
+      ...photoApp,
+      payload: { ...photoApp.payload, publicPhotoConsent: false },
+    },
+    photoEvidence,
+  ],
+  [photoListing, photoApp, { ...photoEvidence, user_id: "stranger" }],
+  [photoListing, photoApp, { ...photoEvidence, id: "other-photo" }],
+  [
+    { ...photoListing, application_id: "another-application" },
+    photoApp,
+    photoEvidence,
+  ],
+])
+  assert.equal(canPublishHostPhoto(listing, app, evidence), false);
 
 const now = Date.now(),
   point = { latitude: 12.97, longitude: 77.59 };

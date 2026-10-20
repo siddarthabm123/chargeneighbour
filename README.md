@@ -10,11 +10,15 @@ ChargeNeighbour helps EV drivers discover real public charging stations and invi
 
 **Pitch deck:** [Download the editable ten-slide presentation](https://chargeneighbour-theta.vercel.app/ChargeNeighbour-pilot-pitch.pptx). Pilot targets and economics are clearly labelled assumptions; no operating traction is claimed.
 
-Drivers can explore Google Maps and apply for the pilot. Hosts can submit an application for review. The proposed business earns a 15% commission on metered sessions after operational approval. Commercial charging is **not currently open**.
+Drivers can explore the in-site station map and apply for the pilot. Hosts can submit an application for review. The proposed business earns a 15% commission on metered sessions after operational approval. Commercial charging is **not currently open**.
 
 ![AI-generated concept image, not a real participating host](public/images/neighbourhood-hero.webp)
 
 ### Current capabilities
+
+The mobile homepage opens directly on discovery. An expandable station sheet, larger touch controls, unknown-specification labels, separate battery-swap filtering and the clearly labelled station demo work without Google billing. Install metadata and a static offline notice are included. The app does not cache private accounts, GPS, photos or live availability for offline use.
+
+Hosts may separately consent to publication of their reviewed photo. Operators can publish that photo through an approved host listing without entering a manual image URL. Private evidence and exact GPS stay protected. A scheduled GitHub production health workflow checks the public service every six hours; notification delivery follows the repository owner’s GitHub settings.
 
 | Capability                           | Implementation and activation                                                                                                                                                                                                                   |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -22,7 +26,7 @@ Drivers can explore Google Maps and apply for the pilot. Hosts can submit an app
 | Nearby sidebar and readable address  | Real mapped stations, road driving-distance/time estimates from GPS, readable address copying; no straight-line distance labelled as driving                                                                                                    |
 | Google photos, ratings and reviews   | In-site photo gallery and attributed Google-supplied review sample implemented; Google billing, Places key and Maps configuration still required                                                                                                |
 | Billing-free station demo            | “Try station demo” opens AI concept image views, example charger details and explicitly fictional reviews; also offered separately when a real station has no photos. No sample records, ratings or locations are added to real search results. |
-| Synchronized filtered markers        | Implemented; requires a separate referrer-restricted Maps JavaScript browser key and actual map ID                                                                                                                                              |
+| Synchronized filtered markers        | Active with Leaflet/OpenStreetMap; Google mode requires its separate restricted browser key and map ID                                                                                                                                          |
 | Host applications and pilot interest | Verified account ownership, mandatory private charger photo + fresh on-site GPS evidence for new hosts, database enforcement, manual review and withdrawal                                                                                      |
 | Email sign-in                        | Supabase callback configured; **custom production SMTP remains required** for general-public delivery                                                                                                                                           |
 | Private support                      | No sign-in required; private receipt token, protected queue and operator responses                                                                                                                                                              |
@@ -54,7 +58,7 @@ Next.js 16, React 19, TypeScript, Supabase Auth/Postgres and Vercel. Application
 
 Writes check origin and bounded JSON. Database transactions serialize submissions and competing reservation requests. API protection uses daily keyed network hashes and database-enforced allowances. Google search, detail and photo calls share a hard **100-call UTC-day cap**, plus per-client limits. Photo links are signed and expire. No Google station/photo content or GPS snapshots are persisted in the application database.
 
-The public map falls back transparently when controlled-map configuration is absent. Straight-line card distances and recently reported connector counts do not establish driving time or guaranteed access.
+The public map falls back transparently when controlled-map configuration is absent. Road estimates exclude live traffic and do not guarantee site access or a free connector.
 
 ### Local development
 

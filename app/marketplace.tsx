@@ -64,6 +64,7 @@ export default function Marketplace({ user }: { user: User }) {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const submission = useRef({ body: "", key: "" });
   const [hostEvidence, setHostEvidence] = useState("");
+  const hostDraft = useRef<Record<string, string>>({});
   const estimate = hostEstimate(hours, days);
 
   useEffect(() => {
@@ -126,6 +127,7 @@ export default function Marketplace({ user }: { user: User }) {
       if (submission.current.body !== body)
         submission.current = { body, key: crypto.randomUUID() };
       const res = await fetch("/api/requests", {
+        signal: AbortSignal.timeout(20000),
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,6 +137,7 @@ export default function Marketplace({ user }: { user: User }) {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error);
+      if (payload.kind === "host") hostDraft.current = {};
       setSuccess(message);
     } catch (e) {
       setError(
@@ -182,6 +185,7 @@ export default function Marketplace({ user }: { user: User }) {
         access: f.get("access"),
         permission: f.get("permission") === "on",
         evidenceId: hostEvidence,
+        publicPhotoConsent: f.get("publicPhotoConsent") === "on",
       },
       "Your host application is saved. It is pending review; your charger is not listed publicly. You can view or withdraw it in My activity.",
     );
@@ -265,6 +269,7 @@ export default function Marketplace({ user }: { user: User }) {
         </div>
       </header>
       <main id="main">
+        <LiveDiscovery />
         <section className="hero wrap">
           <div className="hero-copy">
             <div className="eyebrow">
@@ -338,7 +343,6 @@ export default function Marketplace({ user }: { user: User }) {
             <span className="concept-label">AI-generated concept image</span>
           </div>
         </section>
-        <LiveDiscovery />
         <section id="how" className="how-section">
           <div className="wrap">
             <div className="section-heading">
@@ -678,7 +682,22 @@ export default function Marketplace({ user }: { user: User }) {
             {success ? (
               <Success text={success} onActivity={() => open("activity")} />
             ) : (
-              <form onSubmit={submitHost}>
+              <form
+                onSubmit={submitHost}
+                onChange={(e) => {
+                  const element = e.target;
+                  if (
+                    (element instanceof HTMLInputElement ||
+                      element instanceof HTMLSelectElement) &&
+                    ["name", "area", "power", "access"].includes(element.name)
+                  )
+                    hostDraft.current[element.name] = element.value;
+                }}
+              >
+                <p className="tiny">
+                  Basic form details stay in memory while this page is open.
+                  Closing the form does not save photos or GPS as a draft.
+                </p>
                 {!user && (
                   <div className="notice-card">
                     <p>
@@ -707,7 +726,8 @@ export default function Marketplace({ user }: { user: User }) {
                         minLength={2}
                         maxLength={80}
                         defaultValue={
-                          user?.name.includes("@") ? "" : user?.name
+                          hostDraft.current.name ||
+                          (user?.name.includes("@") ? "" : user?.name)
                         }
                         placeholder="Your full name"
                       />
@@ -720,11 +740,16 @@ export default function Marketplace({ user }: { user: User }) {
                         minLength={2}
                         maxLength={80}
                         placeholder="Neighbourhood, city, state"
+                        defaultValue={hostDraft.current.area || ""}
                       />
                     </label>
                     <label>
                       Type 2 AC charger power
-                      <select name="power" required>
+                      <select
+                        name="power"
+                        required
+                        defaultValue={hostDraft.current.power || "7.2"}
+                      >
                         <option value="7.2">7.2 kW</option>
                         <option value="3.3">3.3 kW</option>
                         <option value="11">11 kW</option>
@@ -733,7 +758,11 @@ export default function Marketplace({ user }: { user: User }) {
                     </label>
                     <label>
                       Parking & entry
-                      <select name="access" required>
+                      <select
+                        name="access"
+                        required
+                        defaultValue={hostDraft.current.access || ""}
+                      >
                         <option value="">Choose access type</option>
                         <option>Independent driveway</option>
                         <option>Commercial parking</option>
@@ -754,6 +783,12 @@ export default function Marketplace({ user }: { user: User }) {
                     </span>
                   </div>
                   <HostEvidenceInput onReady={setHostEvidence} />
+                  <label className="checkbox-label">
+                    <input name="publicPhotoConsent" type="checkbox" />
+                    Optional: after manual approval, this charger photo may
+                    appear on my public listing. Precise GPS stays private. I
+                    have permission to publish the image.
+                  </label>
                   <label className="checkbox-label">
                     <input name="permission" type="checkbox" required />I own or
                     am authorised to offer this charger and parking space, and
@@ -846,6 +881,7 @@ export default function Marketplace({ user }: { user: User }) {
                       required
                       maxLength={80}
                       placeholder="Neighbourhood, city, state"
+                      defaultValue={hostDraft.current.area || ""}
                     />
                   </label>
                   <div className="notice">

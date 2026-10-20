@@ -10,4 +10,4 @@ node docs/pitch/create-deck.mjs . /path/to/pitch-build
 
 Follow the installed Presentations skill's operation-start workflow before generating a new deliverable. The script renders ten slide PNGs and validates package integrity, geometry, typography and first-party import before publishing its output. Visually review every rendered slide. It does not execute native PowerPoint. Copy only the finalized output into `public/` and keep its assumptions synchronized with `public/pitch-brief.md`.
 
-The 20 October 2026 presentation passed those checks, all slides were reviewed, and the session arithmetic was independently checked. Final SHA-256: `00d7b6ef65a064af22a5fa813a6addc9dc1b19c8c64717db1801d505fc7500fd`.
+The 20 October 2026 mobile release updates slides 3 and 9 to the actual alternative-map journey and launch dependencies. The remaining eight rendered slides are pixel-identical to the previously reviewed version. The updated slides passed visual review and the finalized deck passed integrity/layout/import checks. Final SHA-256: `1340f0ca4d87abb99dc1592472962dfd4628b4803ebf10636d7aec798ea604d5`.

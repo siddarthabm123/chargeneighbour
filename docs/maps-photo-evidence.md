@@ -29,3 +29,11 @@ Daily cleanup removes unlinked evidence/files after two days. Evidence linked to
 ## Verification
 
 Run the existing CI plus `node scripts/check-evidence-routes.mjs`. The database test covers evidence ownership, denied metadata forgery, missing-evidence rejection, successful owned submission and encrypted metadata restoration. `scripts/check-evidence-storage.mjs` uses approved private environment/hidden stdin to test a synthetic image, deny public access, retrieve a short-lived signed image, and remove only its own test object. It does not read customer records. Actual camera/GPS capture, real operator approval and Google billing acceptance still need the corresponding consenting user/provider setup.
+
+## Permissioned public listing photos
+
+New applicants can optionally opt in to public publication of the submitted charger photo. This is separate from required private review consent. An operator can select the reviewed image during actual onboarding. The public image route requires an approved listing referencing the exact image URL, the matching application, uncancelled application status, explicit recorded photo-publication consent and matching evidence ownership. It streams only the sanitized JPEG with no-store headers and excludes GPS, timestamps and signed private URLs. Cancelling the application or suspending the listing removes access on subsequent requests. The underlying bucket stays private. No new storage schema or public bucket policy is introduced.
+
+## Offline and monitoring
+
+The service worker caches only the static offline notice. It never caches account pages, API responses, maps, GPS or photos. There is no offline booking/payment confirmation. The GitHub health workflow probes the homepage, database health, manifest and offline notice every six hours. GitHub failure notifications depend on the owner’s notification settings; this is not continuous or SLA-backed monitoring.

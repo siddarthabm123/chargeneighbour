@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     if (
       !destinations.every(
         (d) =>
+          !!d &&
           typeof d.id === "string" &&
           d.id.length <= 200 &&
           validPoint(d.location) &&

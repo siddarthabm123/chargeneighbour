@@ -138,6 +138,43 @@ export function matchesStation(
 }
 export const googleSearchUrl = (query: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`EV charging stations near ${query.trim() || "India"}`)}`;
+export function stationCategory(station: Pick<Station, "name">) {
+  return /\bswap(?:ping)?\b|e:swap/i.test(station.name) ? "swap" : "charging";
+}
+export function canPublishHostPhoto(
+  listing: { status: string; application_id: string },
+  application: {
+    id: string;
+    user_id: string;
+    status: string;
+    payload: { evidenceId?: string; publicPhotoConsent?: boolean };
+  },
+  evidence: { id: string; user_id: string },
+) {
+  return (
+    listing.status === "approved" &&
+    listing.application_id === application.id &&
+    application.status !== "cancelled" &&
+    application.payload.publicPhotoConsent === true &&
+    application.payload.evidenceId === evidence.id &&
+    application.user_id === `supabase:${evidence.user_id}`
+  );
+}
+export function unknownSpecs(
+  station: Station,
+  connector: string,
+  power: number,
+) {
+  return (
+    !station.connectors.length ||
+    station.connectors.some(
+      (c) =>
+        (!connector || !c.type || c.type === connector) &&
+        (!power || !c.maxChargeRateKw || c.maxChargeRateKw >= power) &&
+        (!c.type || !c.maxChargeRateKw),
+    )
+  );
+}
 export function directionsUrl(station: Station, origin?: Point | null) {
   const url = new URL("https://www.google.com/maps/dir/");
   url.searchParams.set("api", "1");

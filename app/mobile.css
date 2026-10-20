@@ -1,0 +1,321 @@
+.live-discovery {
+  padding-top: 36px;
+}
+.location-controls details {
+  font-size: 14px;
+  max-width: 760px;
+}
+.location-controls summary,
+.station-filter-panel > summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.location-controls summary::before,
+.station-filter-panel > summary::before {
+  content: "+";
+  font-size: 22px;
+}
+.location-controls details[open] summary::before,
+.station-filter-panel[open] > summary::before {
+  content: "−";
+}
+.station-filter-panel {
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}
+.station-filter-panel > summary {
+  padding: 10px 18px;
+}
+.station-filter-panel .station-filters {
+  border: 0;
+  margin: 0;
+}
+.compatibility-note {
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 12px 0 20px;
+}
+.compatibility-badge {
+  display: block;
+  width: fit-content;
+  background: #fff2d1;
+  color: #5e4718;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.mobile-sheet-toggle,
+.mobile-sheet-tools {
+  display: none;
+}
+.network-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  padding: 12px 20px;
+  background: #fff0c9;
+  color: #513d15;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.network-banner button {
+  text-decoration: underline;
+  min-height: 44px;
+  margin-left: 12px;
+}
+.host-steps {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 15px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.host-steps strong {
+  color: #214c36;
+}
+@media (max-width: 760px) {
+  .announcement {
+    display: none;
+  }
+  .header {
+    min-height: 72px;
+    padding-block: 12px;
+  }
+  .header .signin,
+  .header .menu-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .header .signin {
+    padding: 8px;
+  }
+  .live-discovery {
+    padding-block: 12px 36px;
+  }
+  .live-discovery .section-heading {
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+  .live-discovery .section-heading h2 {
+    font-size: clamp(29px, 8vw, 40px);
+    line-height: 1.15;
+    letter-spacing: -1px;
+    margin: 6px 0 10px;
+  }
+  .live-discovery .eyebrow {
+    display: none;
+  }
+  .live-discovery .section-heading p {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .live-discovery .coverage-tag {
+    display: none;
+  }
+  .live-search {
+    margin-bottom: 12px;
+    padding: 16px;
+    gap: 12px;
+  }
+  .live-search input {
+    min-height: 44px;
+    font-size: 17px;
+  }
+  .live-search .button {
+    min-height: 48px;
+  }
+  .location-controls {
+    gap: 4px;
+    margin-block: 12px;
+  }
+  .location-controls .button {
+    width: 100%;
+    min-height: 48px;
+  }
+  .location-controls details {
+    width: 100%;
+  }
+  .location-controls p {
+    font-size: 14px;
+  }
+  .demo-entry {
+    padding: 0;
+    margin: 8px 0 14px;
+    border: 0;
+    background: none;
+  }
+  .demo-entry > div {
+    display: none;
+  }
+  .demo-entry .button {
+    min-height: 44px;
+    font-size: 15px;
+  }
+  .explore-toolbar {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .explore-toolbar > span {
+    display: none;
+  }
+  .view-switch button {
+    min-height: 48px;
+    font-size: 15px;
+  }
+  .station-filters select {
+    min-height: 48px;
+    font-size: 16px;
+  }
+  .station-filters .availability-filter {
+    min-height: 44px;
+    font-size: 15px;
+  }
+  .compatibility-note {
+    font-size: 14px;
+  }
+  .station-workspace,
+  .station-workspace.compact-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .map-detail-panel {
+    display: contents;
+  }
+  .real-map-card {
+    grid-row: 1;
+    border-radius: 12px 12px 0 0;
+  }
+  .real-map-card .map-title {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .map-title b {
+    font-size: 15px;
+  }
+  .map-mode-controls {
+    padding: 0 12px 10px;
+    gap: 6px;
+  }
+  .map-mode-controls button {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .real-map-card .controlled-map,
+  .real-map-card iframe {
+    height: 290px;
+  }
+  .real-map-card .map-help {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .leaflet-control-zoom a {
+    width: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+  }
+  .station-list-panel,
+  .station-detail {
+    grid-row: 2;
+    margin: 0;
+    border-radius: 16px 16px 10px 10px;
+    border: 1px solid var(--line);
+    background: white;
+    max-height: 46dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .station-workspace.sheet-expanded .station-list-panel,
+  .station-workspace.sheet-expanded .station-detail {
+    max-height: 78dvh;
+  }
+  .station-workspace.has-selection .station-list-panel {
+    display: none;
+  }
+  .station-workspace:not(.has-selection) .before-you-go {
+    display: none;
+  }
+  .station-workspace.compact-list .real-map-card {
+    display: none;
+  }
+  .station-list-heading {
+    padding: 14px;
+  }
+  .station-list-heading h3 {
+    font-size: 21px;
+  }
+  .mobile-sheet-toggle {
+    display: block;
+    min-height: 44px;
+    text-decoration: underline;
+    font-size: 15px;
+  }
+  .mobile-sheet-tools {
+    display: flex;
+    justify-content: space-between;
+    position: sticky;
+    top: -18px;
+    background: white;
+    z-index: 2;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+  .mobile-sheet-tools button {
+    min-height: 44px;
+    font-size: 14px;
+    text-decoration: underline;
+  }
+  .station-detail {
+    padding: 18px;
+    scroll-margin-top: 15px;
+  }
+  .station-preview {
+    padding: 18px;
+  }
+  .station-preview .station-name {
+    min-height: 48px;
+    font-size: 21px;
+  }
+  .station-preview p {
+    font-size: 16px;
+  }
+  .station-card-footer button,
+  .station-list-heading .inline-link {
+    min-height: 44px;
+  }
+  .station-detail .button {
+    min-height: 48px;
+    font-size: 16px;
+  }
+  .station-photo-dialog {
+    padding: 20px;
+  }
+  .clear-position {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .your-position {
+    padding: 16px;
+  }
+  .your-position p {
+    font-size: 16px;
+  }
+  .hero {
+    padding-block: 36px;
+    border-top: 1px solid var(--line);
+  }
+  .hero h1 {
+    font-size: 42px;
+  }
+  .hero-visual {
+    display: none;
+  }
+}

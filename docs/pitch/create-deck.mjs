@@ -186,34 +186,34 @@ note(
   "These are product hypotheses and practical verification needs, not survey findings. Google station data does not guarantee access or availability. Source: https://developers.google.com/maps/documentation/places/web-service/policies . Validate the frequency and importance of these problems through driver interviews.",
 );
 
-s = page("The product journey", 3);
+s = page("The mobile driver journey", 3);
 row(
   s,
-  "Discover public stations",
-  "Explore real Google Maps places and driving directions.",
+  "Search immediately",
+  "Enter a destination or choose optional GPS for nearby places.",
   195,
 );
 row(
   s,
-  "Apply to share a charger",
-  "Owners submit an application for access and equipment review.",
+  "Check compatibility",
+  "Separate supplied connector information from unknown specifications.",
   305,
 );
 row(
   s,
-  "Offer a planned local stop",
-  "Approved hosts publish offered hours for compatible drivers.",
+  "Explore the stop",
+  "Inspect station details. The sample gallery labels its AI images and reviews.",
   415,
 );
 row(
   s,
-  "Record the session",
-  "The proposed service uses confirmation and measured energy.",
+  "Preview the road route",
+  "See a road line, driving distance and estimated time inside the website.",
   525,
 );
 text(
   s,
-  "Public discovery and host applications are separate from commercial activation.",
+  "Public discovery and demo samples stay separate from approved host bookings.",
   72,
   625,
   1120,
@@ -224,13 +224,9 @@ text(
 );
 note(
   s,
-  "Implementation evidence: " +
+  "Current mobile product: " +
     site +
-    " , " +
-    site +
-    "/hosts , " +
-    site +
-    "/support and the linked repository. Detailed Places cards and synchronized markers still require Google activation. Reservations and payments remain gated pending operator/provider approval and acceptance testing. No operating sessions or partner inventory are claimed.",
+    " . OpenStreetMap/Photon discovery and limited OSRM road routes work without Google billing. Time excludes live traffic. Unknown specifications do not establish compatibility. The demo gallery and fictional reviews are explicitly labelled. Host applications require private photo/GPS evidence and actual manual review. Reservations remain gated. No operating inventory or sessions are claimed.",
 );
 
 s = page("The first customer and host", 4);
@@ -451,7 +447,7 @@ s = page("Product progress and launch gates", 9);
 text(s, "Implemented foundation", 72, 191, 520, 60, 34, true);
 text(
   s,
-  "Public map and pilot applications\n\nPrivate account and support flows\n\nOperator review and session records\n\nTested reservation/payment safeguards",
+  "Mobile search and road-route preview\n\nPhoto and GPS review workflow\n\nAccount, support and session records\n\nTested ownership/payment safeguards",
   72,
   285,
   520,
@@ -463,7 +459,7 @@ text(
 text(s, "Before commercial charging", 704, 191, 505, 75, 34, true);
 text(
   s,
-  "Actual legal operator and public contact\n\nProduction email and Google activation\n\nVerified hosts and merchant approval\n\nFinal policies and supervised acceptance",
+  "Actual legal operator and public contact\n\nProduction email and routing capacity\n\nVerified hosts and merchant approval\n\nFinal policies and supervised acceptance",
   704,
   285,
   505,

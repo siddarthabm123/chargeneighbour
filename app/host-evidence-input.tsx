@@ -1,18 +1,40 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 async function preparePhoto(file: File) {
-  const image = await createImageBitmap(file),
-    scale = Math.min(1, 1920 / Math.max(image.width, image.height));
+  if (!/^(image\/(jpeg|png|webp))$/.test(file.type))
+    throw Error(
+      "Use a JPEG, PNG or WebP photo. For an iPhone HEIC image, take a new camera photo or export it as JPEG.",
+    );
+  let image: ImageBitmap | HTMLImageElement;
+  try {
+    image = await createImageBitmap(file);
+  } catch {
+    const url = URL.createObjectURL(file);
+    try {
+      image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () =>
+          reject(
+            Error("This image could not be opened. Take a new JPEG photo."),
+          );
+        img.src = url;
+      });
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  const scale = Math.min(1, 1920 / Math.max(image.width, image.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(image.width * scale);
   canvas.height = Math.round(image.height * scale);
   const context = canvas.getContext("2d");
   if (!context) {
-    image.close();
+    if ("close" in image) image.close();
     throw Error("Photo processing is unavailable.");
   }
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  image.close();
+  if ("close" in image) image.close();
   const photo = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
       (blob) =>
@@ -38,7 +60,29 @@ export default function HostEvidenceInput({
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [saved, setSaved] = useState(false);
-  const consent = useRef<HTMLInputElement>(null);
+  const consent = useRef<HTMLInputElement>(null),
+    pending = useRef<AbortController | null>(null);
+  const [expires, setExpires] = useState(0),
+    [remaining, setRemaining] = useState(0);
+  useEffect(() => () => pending.current?.abort(), []);
+  useEffect(() => {
+    if (!expires) return;
+    const update = () => {
+      const left = Math.max(0, Math.ceil((expires - Date.now()) / 60000));
+      setRemaining(left);
+      if (!left) {
+        onReady("");
+        setSaved(false);
+        setExpires(0);
+        setMessage(
+          "The upload receipt expired. Your form details are kept. Capture GPS and upload again before submitting.",
+        );
+      }
+    };
+    update();
+    const timer = setInterval(update, 10000);
+    return () => clearInterval(timer);
+  }, [expires, onReady]);
   useEffect(() => {
     if (!file) {
       setPreview("");
@@ -57,6 +101,8 @@ export default function HostEvidenceInput({
     setMessage("");
     onReady("");
     setSaved(false);
+    setExpires(0);
+    pending.current = new AbortController();
     try {
       const photo = await preparePhoto(file);
       if (!navigator.geolocation)
@@ -88,6 +134,10 @@ export default function HostEvidenceInput({
       form.set("capturedAt", new Date(position.timestamp).toISOString());
       form.set("consent", "yes");
       const response = await fetch("/api/host-evidence", {
+        signal: AbortSignal.any([
+          pending.current.signal,
+          AbortSignal.timeout(45000),
+        ]),
         method: "POST",
         body: form,
       });
@@ -95,6 +145,7 @@ export default function HostEvidenceInput({
       if (!response.ok) throw Error(data.message || "Photo upload failed.");
       onReady(data.id);
       setSaved(true);
+      setExpires(Date.now() + 29 * 60000);
       setMessage(
         `Photo and GPS saved privately · accuracy about ${Math.round(data.accuracy)} m. Pending operator review. Submit this application within 30 minutes.`,
       );
@@ -111,6 +162,11 @@ export default function HostEvidenceInput({
   return (
     <div className="host-evidence-input notice-card">
       <h3>Show the charger at this location</h3>
+      <div className="host-steps">
+        <span>1. Choose photo</span>
+        <span>2. Allow on-site GPS</span>
+        <strong>3. {saved ? "Ready to submit" : "Upload for review"}</strong>
+      </div>
       <p>
         Add at least one clear photo showing the installed charger and parking
         or entrance. Stand beside the charger with GPS enabled. Photo and GPS
@@ -165,6 +221,12 @@ export default function HostEvidenceInput({
             : "Capture GPS & upload photo"}
       </button>
       {message && <p role="status">{message}</p>}
+      {saved && (
+        <p role="status">
+          Upload receipt: about {remaining} minutes left. GPS and images are not
+          kept in a browser draft.
+        </p>
+      )}
     </div>
   );
 }

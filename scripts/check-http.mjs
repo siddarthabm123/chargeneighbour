@@ -41,6 +41,9 @@ try {
     "/robots.txt",
     "/sitemap.xml",
     "/opengraph-image",
+    "/manifest.webmanifest",
+    "/offline.html",
+    "/sw.js",
   ]) {
     const r = await fetch(base + path);
     assert.equal(r.status, 200, path);
@@ -68,6 +71,11 @@ try {
       path,
     );
   const demoHome = await (await fetch(base)).text();
+  assert.ok(
+    demoHome.indexOf('id="explore"') < demoHome.indexOf('class="hero wrap"'),
+    "Discovery precedes the marketing hero",
+  );
+  assert.equal((await fetch(base + "/api/hosts/photo?id=invalid")).status, 400);
   assert.ok(
     demoHome.includes("Try station demo"),
     "Billing-free demo entry is present",

@@ -201,6 +201,7 @@ export default function OperatorConsole() {
         .filter(Boolean),
       checks,
       evidence: f.get("evidence"),
+      useApprovedEvidence: f.get("useApprovedEvidence") === "on",
     });
   }
   function slot(e: FormEvent<HTMLFormElement>) {
@@ -387,7 +388,13 @@ export default function OperatorConsole() {
               </label>
               <label>
                 Approved host photo URLs (one HTTPS URL per line, 1–6)
-                <textarea name="photos" required rows={3} />
+                <textarea name="photos" rows={3} />
+              </label>
+              <label className="checkbox-label">
+                <input name="useApprovedEvidence" type="checkbox" />
+                Use the reviewed applicant photo instead of URLs. Requires the
+                applicant’s public-photo consent and manual checks for private
+                details. GPS is excluded.
               </label>
               {[
                 "identity",

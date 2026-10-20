@@ -9,7 +9,7 @@ import {
   textField,
   uuid,
 } from "../../lib/http";
-import { commercialReady, operatorDetails } from "../../lib/settings";
+import { commercialReady, operatorDetails, siteUrl } from "../../lib/settings";
 import { validPoint, safeWebLink, distanceKm } from "../../lib/stations";
 
 export async function GET(request: Request) {
@@ -172,11 +172,22 @@ export async function POST(request: Request) {
       const evidence = textField(b.evidence, 20, 2000),
         address = textField(b.address, 10, 1000),
         access = textField(b.access, 10, 2000);
+      let photos = b.photos;
+      if (b.useApprovedEvidence === true) {
+        if (applications[0].payload.publicPhotoConsent !== true)
+          throw new HttpError(
+            400,
+            "The applicant has not consented to public publication of this photo.",
+          );
+        photos = [
+          `${new URL(siteUrl()).origin}/api/hosts/photo?id=${evidenceId}`,
+        ];
+      }
       if (
-        !Array.isArray(b.photos) ||
-        !b.photos.length ||
-        b.photos.length > 6 ||
-        !b.photos.every((p) => safeWebLink(p))
+        !Array.isArray(photos) ||
+        !photos.length ||
+        photos.length > 6 ||
+        !photos.every((p) => safeWebLink(p))
       )
         throw new HttpError(
           400,
@@ -191,7 +202,7 @@ export async function POST(request: Request) {
           power_kw: power,
           price_paise_kwh: price,
           access_notes: access,
-          photos: b.photos,
+          photos,
           checks: {
             ...Object.fromEntries(
               [

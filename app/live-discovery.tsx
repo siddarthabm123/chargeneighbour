@@ -26,6 +26,8 @@ import {
   freshAvailability,
   googleSearchUrl,
   matchesStation,
+  stationCategory,
+  unknownSpecs,
   type Point,
   type Station,
 } from "./lib/stations";
@@ -48,6 +50,9 @@ export default function LiveDiscovery() {
     [mode, setMode] = useState<MapMode>("nearby"),
     [view, setView] = useState("map");
   const [connector, setConnector] = useState(""),
+    [includeUnknown, setIncludeUnknown] = useState(true),
+    [includeSwap, setIncludeSwap] = useState(false),
+    [sheetExpanded, setSheetExpanded] = useState(false),
     [power, setPower] = useState(0),
     [onlyAvailable, setOnlyAvailable] = useState(false),
     [now, setNow] = useState(Date.now());
@@ -89,7 +94,7 @@ export default function LiveDiscovery() {
   useEffect(() => {
     if (selected && window.matchMedia("(max-width: 760px)").matches)
       document
-        .getElementById("station-map")
+        .getElementById("station-workspace")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selected]);
   useEffect(() => {
@@ -127,7 +132,9 @@ export default function LiveDiscovery() {
   const filtered = stations
     .filter(
       (s) =>
-        matchesStation(s, connector, power) &&
+        (includeSwap || stationCategory(s) !== "swap") &&
+        (matchesStation(s, connector, power) ||
+          (includeUnknown && unknownSpecs(s, connector, power))) &&
         (!onlyAvailable || availableConnectors(s, connector, power, now) > 0),
     )
     .sort((a, b) =>
@@ -143,6 +150,11 @@ export default function LiveDiscovery() {
         (s) => s.location && availableConnectors(s, connector, power, now) > 0,
       )
     : undefined;
+  const unknownCount = filtered.filter((s) =>
+    unknownSpecs(s, connector, power),
+  ).length;
+  const stalePosition =
+    !!position && now - Date.parse(position.capturedAt) > 120000;
 
   async function loadStations(searchArea: string, origin?: Position) {
     const number = ++requestNumber.current;
@@ -266,6 +278,9 @@ export default function LiveDiscovery() {
   }
   function showNearby() {
     setView("list");
+    setSelected(null);
+    setSheetExpanded(false);
+    setRoadRoute(null);
     setMode("nearby");
     if (!position) {
       if (!stations.length && !locating) locate();
@@ -347,6 +362,8 @@ export default function LiveDiscovery() {
     setRouteBusy(false);
   }
   async function focusStation(s: Station) {
+    setView("map");
+    setSheetExpanded(false);
     setSelected(s);
     setMode("station");
     setRoadRoute(null);
@@ -462,7 +479,7 @@ export default function LiveDiscovery() {
     }
   }
   function startRoute(station: Station) {
-    if (position) void loadRoadRoute(station, position);
+    if (position && !stalePosition) void loadRoadRoute(station, position);
     else locate(station);
   }
   const distance = (s: Station) =>
@@ -478,35 +495,15 @@ export default function LiveDiscovery() {
       <div className="section-heading">
         <div>
           <div className="eyebrow">A CLEARER PICTURE, BEFORE YOU GO.</div>
-          <h2>Your next charge. In view.</h2>
+          <h2>Find your next charge.</h2>
           <p>
-            See the real map, explore the place and check the charger before
-            setting off.
+            Search nearby places. Check access and compatibility before you go.
           </p>
         </div>
         <span className="coverage-tag">
           <MapPin size={16} />
           Across India
         </span>
-      </div>
-      <div className="demo-entry">
-        <div>
-          <b>See how a charging stop comes together.</b>
-          <p>
-            Try the photo gallery, charger details and sample reviews. No
-            sign-in or location needed.
-          </p>
-        </div>
-        <button
-          className="button outline"
-          onClick={() => {
-            setDemoPhotos(true);
-            setPhotosOpen(true);
-          }}
-        >
-          <Camera size={18} />
-          Try station demo
-        </button>
       </div>
       <form className="live-search" onSubmit={search}>
         <label htmlFor="station-location">
@@ -557,13 +554,16 @@ export default function LiveDiscovery() {
               ? "Refresh my location"
               : "Use my location"}
         </button>
-        <p>
-          Your choice: your browser asks permission. This site, Google Maps and
-          Photon (OpenStreetMap) use your location for nearby stations, maps and
-          a readable address. We do not save your GPS location in our database.
-          Driving-route requests also go to OSRM/FOSSGIS or Google Routes; map
-          tiles use OpenStreetMap when Google is inactive.
-        </p>
+        <details>
+          <summary>How your location is used</summary>
+          <p>
+            Your choice: your browser asks permission. This site, Google Maps
+            and Photon (OpenStreetMap) use your location for nearby stations,
+            maps and a readable address. We do not save your GPS location in our
+            database. Driving-route requests also go to OSRM/FOSSGIS or Google
+            Routes; map tiles use OpenStreetMap when Google is inactive.
+          </p>
+        </details>
       </div>
       {locationError && (
         <p className="location-error" role="alert">
@@ -646,6 +646,31 @@ export default function LiveDiscovery() {
           </button>
         </div>
       )}
+      {stalePosition && (
+        <p className="location-error" role="status">
+          Your saved position is over two minutes old. Refresh after moving.
+          Starting a route requests a fresh position.
+        </p>
+      )}
+      <div className="demo-entry">
+        <div>
+          <b>See how a charging stop comes together.</b>
+          <p>
+            Try the photo gallery, charger details and sample reviews. No
+            sign-in or location needed.
+          </p>
+        </div>
+        <button
+          className="button outline"
+          onClick={() => {
+            setDemoPhotos(true);
+            setPhotosOpen(true);
+          }}
+        >
+          <Camera size={18} />
+          Try station demo
+        </button>
+      </div>
       <div className="explore-toolbar">
         <div className="view-switch" aria-label="Station view">
           <button
@@ -667,46 +692,78 @@ export default function LiveDiscovery() {
         </div>
         <span>Explore stations and driving routes here</span>
       </div>
-      <div className="station-filters">
-        <label>
-          Connector
-          <select
-            value={connector}
-            onChange={(e) => setConnector(e.target.value)}
-          >
-            <option value="">All connectors</option>
-            <option value="EV_CONNECTOR_TYPE_TYPE_2">Type 2 AC</option>
-            <option value="EV_CONNECTOR_TYPE_CCS_COMBO_2">CCS2</option>
-            <option value="EV_CONNECTOR_TYPE_CHADEMO">CHAdeMO</option>
-            <option value="EV_CONNECTOR_TYPE_UNSPECIFIED_GB_T">GB/T</option>
-          </select>
-        </label>
-        <label>
-          Minimum power
-          <select
-            value={power}
-            onChange={(e) => setPower(Number(e.target.value))}
-          >
-            <option value={0}>Any power</option>
-            <option value={7}>7 kW+</option>
-            <option value={22}>22 kW+</option>
-            <option value={50}>50 kW+</option>
-          </select>
-        </label>
-        <label className="availability-filter">
-          <input
-            type="checkbox"
-            checked={onlyAvailable}
-            onChange={(e) => setOnlyAvailable(e.target.checked)}
-          />
-          Recently reported available
-        </label>
-        <p>
-          {synchronized
-            ? "Map markers and station cards show the same filtered results."
-            : "Filters apply to station cards. The fallback Google map has its own results."}
+      <details className="station-filter-panel">
+        <summary>
+          Filters{connector || power || onlyAvailable ? " · active" : ""}
+        </summary>
+        <div className="station-filters">
+          <label>
+            Connector
+            <select
+              value={connector}
+              onChange={(e) => setConnector(e.target.value)}
+            >
+              <option value="">All connectors</option>
+              <option value="EV_CONNECTOR_TYPE_TYPE_2">Type 2 AC</option>
+              <option value="EV_CONNECTOR_TYPE_CCS_COMBO_2">CCS2</option>
+              <option value="EV_CONNECTOR_TYPE_CHADEMO">CHAdeMO</option>
+              <option value="EV_CONNECTOR_TYPE_UNSPECIFIED_GB_T">GB/T</option>
+            </select>
+          </label>
+          <label>
+            Minimum power
+            <select
+              value={power}
+              onChange={(e) => setPower(Number(e.target.value))}
+            >
+              <option value={0}>Any power</option>
+              <option value={7}>7 kW+</option>
+              <option value={22}>22 kW+</option>
+              <option value={50}>50 kW+</option>
+            </select>
+          </label>
+          <label className="availability-filter">
+            <input
+              type="checkbox"
+              checked={onlyAvailable}
+              onChange={(e) => setOnlyAvailable(e.target.checked)}
+            />
+            Recently reported available
+          </label>
+          <label className="availability-filter">
+            <input
+              type="checkbox"
+              checked={includeUnknown}
+              onChange={(e) => setIncludeUnknown(e.target.checked)}
+            />
+            Include places with unknown specifications
+          </label>
+          <label className="availability-filter">
+            <input
+              type="checkbox"
+              checked={includeSwap}
+              onChange={(e) => setIncludeSwap(e.target.checked)}
+            />
+            Include named battery-swap sites
+          </label>
+          <p>
+            {synchronized
+              ? "Map markers and station cards show the same filtered results."
+              : "Filters apply to station cards. The fallback Google map has its own results."}
+          </p>
+        </div>
+      </details>
+      {!!stations.length && (
+        <p className="compatibility-note" role="status">
+          {filtered.length} nearby places · {unknownCount} with unconfirmed
+          specifications.{" "}
+          {connector || power
+            ? "Unknown specifications do not confirm a connector/power match. "
+            : ""}
+          Battery-swap names are excluded unless selected. Vehicle support and
+          free connectors require confirmation.
         </p>
-      </div>
+      )}
       {message && (
         <div className="station-notice" role="status">
           <ShieldCheck size={20} />
@@ -716,6 +773,15 @@ export default function LiveDiscovery() {
       {routeError && (
         <p className="location-error" role="status">
           {routeError} No straight-line estimate is shown as a driving distance.
+          {selected && (
+            <button
+              className="button outline"
+              disabled={routeBusy || locating}
+              onClick={() => startRoute(selected)}
+            >
+              Retry route
+            </button>
+          )}
         </p>
       )}
       {nearest && (
@@ -736,7 +802,7 @@ export default function LiveDiscovery() {
         </div>
       )}
       <div
-        className={`station-workspace ${view === "list" ? "compact-list" : ""}`}
+        className={`station-workspace ${view === "list" ? "compact-list" : ""} ${selected ? "has-selection" : ""} ${sheetExpanded ? "sheet-expanded" : ""}`}
         id="station-workspace"
       >
         <aside
@@ -755,7 +821,7 @@ export default function LiveDiscovery() {
               {busy
                 ? "Finding stations…"
                 : stations.length
-                  ? `${filtered.length} matching stations`
+                  ? `${filtered.length} nearby places`
                   : "Station guide"}
             </h3>
             {position ? (
@@ -773,6 +839,13 @@ export default function LiveDiscovery() {
                 Add distances from my location
               </button>
             )}
+            <button
+              className="mobile-sheet-toggle"
+              onClick={() => setSheetExpanded(!sheetExpanded)}
+              aria-expanded={sheetExpanded}
+            >
+              {sheetExpanded ? "Compact list" : "Expand list"}
+            </button>
           </div>
           {busy ? (
             <div className="station-empty" role="status">
@@ -803,6 +876,13 @@ export default function LiveDiscovery() {
                   <ArrowUpRight size={19} />
                 </button>
                 <p>{s.address}</p>
+                <span className="compatibility-badge">
+                  {stationCategory(s) === "swap"
+                    ? "Battery swap · check supported vehicle"
+                    : unknownSpecs(s, connector, power)
+                      ? "Compatibility unknown · check with operator"
+                      : "Connector information supplied · confirm your vehicle"}
+                </span>
                 {distance(s) && (
                   <div className="distance-label">
                     <Navigation size={14} />
@@ -854,7 +934,7 @@ export default function LiveDiscovery() {
               </h3>
               <p>
                 {stations.length
-                  ? "Try another connector, power or availability filter."
+                  ? "No confirmed matches for these filters. Include unknown specifications or clear the availability filter to inspect unverified places."
                   : "Search a city or use your location to load nearby station names and distances."}
               </p>
               <a href={mapsLink} target="_blank" rel="noreferrer">
@@ -997,8 +1077,33 @@ export default function LiveDiscovery() {
               id="station-detail"
               aria-label="Selected station details"
             >
+              <div className="mobile-sheet-tools">
+                <button
+                  onClick={() => {
+                    setSelected(null);
+                    setMode("nearby");
+                    setRoadRoute(null);
+                    setSheetExpanded(false);
+                  }}
+                >
+                  All nearby places
+                </button>
+                <button
+                  onClick={() => setSheetExpanded(!sheetExpanded)}
+                  aria-expanded={sheetExpanded}
+                >
+                  {sheetExpanded ? "Compact details" : "Expand details"}
+                </button>
+              </div>
               <div className="detail-eyebrow">EXPLORE BEFORE YOU ARRIVE</div>
               <h3>{selected.name}</h3>
+              <p className="compatibility-badge">
+                {stationCategory(selected) === "swap"
+                  ? "Battery-swap site · check supported vehicle"
+                  : unknownSpecs(selected, connector, power)
+                    ? "Compatibility unknown · confirm connector and power"
+                    : "Connector information supplied · confirm your vehicle"}
+              </p>
               <p className="detail-address">
                 <MapPin size={17} />
                 {selected.address}

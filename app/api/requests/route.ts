@@ -124,6 +124,7 @@ export async function POST(request: Request) {
         permission: true,
         connector: "Type 2 AC",
         evidenceId: body.evidenceId,
+        publicPhotoConsent: body.publicPhotoConsent === true,
       };
     } else if (kind === "interest") {
       const area = textField(body.area, 2, 80),

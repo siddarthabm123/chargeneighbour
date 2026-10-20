@@ -15,6 +15,7 @@ export async function proxy(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
+    "worker-src 'self'",
     ...(!dev ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
   const incoming = new Headers(request.headers);

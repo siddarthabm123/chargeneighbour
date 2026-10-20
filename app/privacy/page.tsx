@@ -39,7 +39,12 @@ export default function Privacy() {
         capture, accuracy and timestamp. These are stored privately in Supabase
         for manual review by authorised operators; a photo or self-reported GPS
         does not verify ownership, charger existence or safety. Images are
-        resized and re-encoded to remove embedded metadata.
+        resized and re-encoded to remove embedded metadata. If you separately
+        opt in to public photo publication, an authorised operator may approve
+        that image for your public listing. We serve only images referenced by
+        an approved listing with recorded consent. GPS metadata remains private.
+        Withdrawal removes public photo access after the listing is suspended or
+        removed.
       </p>
       <h2>Location and map providers</h2>
       <p>
