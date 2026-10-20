@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { rpc } from "../../../db/server";
+import { cleanupEvidence } from "../../../db/evidence-cleanup";
 import { failure, HttpError, json } from "../../lib/http";
 export async function GET(request: Request) {
   try {
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
     )
       throw new HttpError(401, "Unauthorized.");
     await rpc("cleanup_pilot_data", {});
+    await cleanupEvidence();
     return json({ ok: true });
   } catch (error) {
     return failure(error, "maintenance.cleanup");

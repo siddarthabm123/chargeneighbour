@@ -15,14 +15,17 @@ export default function Status() {
       <dl className="status-list">
         <div>
           <dt>Public map</dt>
-          <dd>Available through Google Maps</dd>
+          <dd>Interactive station map with in-site driving-route preview</dd>
         </div>
         <div>
           <dt>Nearby station list & readable address</dt>
-          <dd>OpenStreetMap lookup via Photon; optional GPS distances</dd>
+          <dd>
+            OpenStreetMap lookup via Photon; optional GPS road-distance
+            estimates from OSRM
+          </dd>
         </div>
         <div>
-          <dt>Google station specifications & photos</dt>
+          <dt>Google station photos, ratings & reviews</dt>
           <dd>
             {process.env.GOOGLE_PLACES_API_KEY
               ? "Configured — search to check current results"
@@ -31,7 +34,10 @@ export default function Status() {
         </div>
         <div>
           <dt>Host applications & interest</dt>
-          <dd>Open; account sign-in is required</dd>
+          <dd>
+            Open; sign-in required. New hosts must attach a charger photo and
+            fresh on-site GPS for manual review.
+          </dd>
         </div>
         <div>
           <dt>Email delivery</dt>

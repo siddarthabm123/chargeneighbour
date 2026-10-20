@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     if (!key) throw new HttpError(503, "Station details are not active yet.");
     await useGoogleAllowance(request, "detail");
     const fields =
-      "id,displayName,formattedAddress,googleMapsUri,location,businessStatus,attributions,evChargeOptions,currentOpeningHours,nationalPhoneNumber,websiteUri,rating,userRatingCount,photos,googleMapsLinks";
+      "id,displayName,formattedAddress,googleMapsUri,location,businessStatus,attributions,evChargeOptions,currentOpeningHours,nationalPhoneNumber,websiteUri,rating,userRatingCount,reviews,photos,googleMapsLinks";
     const response = await fetch(
       `https://places.googleapis.com/v1/places/${id}`,
       {

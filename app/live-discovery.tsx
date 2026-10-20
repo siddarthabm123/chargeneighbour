@@ -22,9 +22,7 @@ import {
 import {
   availableConnectors,
   connectorName,
-  directionsUrl,
   distanceKm,
-  distanceLabel,
   freshAvailability,
   googleSearchUrl,
   matchesStation,
@@ -34,6 +32,7 @@ import {
 
 type Position = Point & { accuracy: number; capturedAt: string };
 import StationMap from "./station-map";
+import { roadLabel, type RoadMetric, type RoadRoute } from "./lib/road-route";
 type MapMode = "nearby" | "you" | "station" | "route";
 export default function LiveDiscovery() {
   const [query, setQuery] = useState(""),
@@ -56,6 +55,28 @@ export default function LiveDiscovery() {
     detailRequest = useRef(0);
   const [synchronized, setSynchronized] = useState(false),
     [detailBusy, setDetailBusy] = useState(false);
+  const [mapProvider, setMapProvider] = useState<"google" | "openstreetmap">(
+      "openstreetmap",
+    ),
+    [metrics, setMetrics] = useState<Record<string, RoadMetric>>({}),
+    [metricBusy, setMetricBusy] = useState(false),
+    [roadRoute, setRoadRoute] = useState<RoadRoute | null>(null),
+    [routeBusy, setRouteBusy] = useState(false),
+    [routeError, setRouteError] = useState(""),
+    [photosOpen, setPhotosOpen] = useState(false);
+  const photoDialog = useRef<HTMLDialogElement>(null),
+    roadRequest = useRef(0),
+    roadController = useRef<AbortController | null>(null);
+  useEffect(() => {
+    if (!photosOpen) return;
+    photoDialog.current?.showModal();
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      photoDialog.current?.close();
+      document.body.style.overflow = previous;
+    };
+  }, [photosOpen]);
   const [address, setAddress] = useState(""),
     [addressBusy, setAddressBusy] = useState(false),
     [addressError, setAddressError] = useState(""),
@@ -78,6 +99,8 @@ export default function LiveDiscovery() {
       detailRequest.current++;
       addressRequest.current++;
       addressController.current?.abort();
+      roadRequest.current++;
+      roadController.current?.abort();
     };
   }, []);
   const pointText = position
@@ -107,8 +130,10 @@ export default function LiveDiscovery() {
     )
     .sort((a, b) =>
       position
-        ? (a.location ? distanceKm(position, a.location) : Infinity) -
-          (b.location ? distanceKm(position, b.location) : Infinity)
+        ? (metrics[a.id]?.distanceMeters ?? Infinity) -
+            (metrics[b.id]?.distanceMeters ?? Infinity) ||
+          (a.location ? distanceKm(position, a.location) : Infinity) -
+            (b.location ? distanceKm(position, b.location) : Infinity)
         : 0,
     );
   const nearest = position
@@ -126,6 +151,13 @@ export default function LiveDiscovery() {
     setMessage("");
     setStations([]);
     setSelected(null);
+    setMetrics({});
+    setMetricBusy(false);
+    setRouteBusy(false);
+    setRoadRoute(null);
+    setRouteError("");
+    roadRequest.current++;
+    roadController.current?.abort();
     setMode("nearby");
     setArea(searchArea);
     try {
@@ -158,6 +190,8 @@ export default function LiveDiscovery() {
         return;
       }
       setStations(data.stations || []);
+      if (origin || position)
+        void loadRoadMetrics(data.stations || [], origin || position!);
       setMessage(data.message || "");
       setNow(Date.now());
       if (!data.stations?.length)
@@ -239,7 +273,7 @@ export default function LiveDiscovery() {
       .getElementById("station-workspace")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  function locate() {
+  function locate(routeTarget?: Station) {
     if (!navigator.geolocation) {
       setLocationError(
         "Your browser does not support location. Enter a city or PIN code instead.",
@@ -264,7 +298,10 @@ export default function LiveDiscovery() {
         setLocating(false);
         setQuery("");
         void lookupAddress(p);
-        void loadStations("Your location", p);
+        if (routeTarget) {
+          setSelected(routeTarget);
+          void loadRoadRoute(routeTarget, p);
+        } else void loadStations("Your location", p);
       },
       (error) => {
         if (number !== requestNumber.current) return;
@@ -299,10 +336,22 @@ export default function LiveDiscovery() {
     setMessage("");
     setArea("India");
     setMode("nearby");
+    setMetrics({});
+    setRoadRoute(null);
+    setRouteError("");
+    roadRequest.current++;
+    roadController.current?.abort();
+    setMetricBusy(false);
+    setRouteBusy(false);
   }
   async function focusStation(s: Station) {
     setSelected(s);
     setMode("station");
+    setRoadRoute(null);
+    setRouteError("");
+    roadRequest.current++;
+    roadController.current?.abort();
+    setRouteBusy(false);
     const number = ++detailRequest.current;
     if (s.source === "openstreetmap") {
       setDetailBusy(false);
@@ -331,8 +380,97 @@ export default function LiveDiscovery() {
       if (number === detailRequest.current) setDetailBusy(false);
     }
   }
+  async function loadRoadMetrics(items: Station[], origin: Position) {
+    const epoch = requestNumber.current;
+    setMetricBusy(true);
+    setMetrics({});
+    const destinations = items
+      .filter((s) => s.location)
+      .map((s) => ({ id: s.id, location: s.location }));
+    if (!destinations.length) {
+      setMetricBusy(false);
+      return;
+    }
+    try {
+      const response = await fetch("/api/routes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origin: { latitude: origin.latitude, longitude: origin.longitude },
+          destinations,
+          source: items[0]?.source || "google",
+        }),
+      });
+      const data = await response.json();
+      if (epoch !== requestNumber.current) return;
+      if (!response.ok)
+        throw Error(data.message || "Driving distances are unavailable.");
+      setMetrics(data.metrics || {});
+    } catch (error) {
+      if (epoch === requestNumber.current)
+        setRouteError(
+          error instanceof Error
+            ? error.message
+            : "Driving distances are unavailable.",
+        );
+    } finally {
+      if (epoch === requestNumber.current) setMetricBusy(false);
+    }
+  }
+  async function loadRoadRoute(station: Station, origin: Position) {
+    if (!station.location) return;
+    const number = ++roadRequest.current;
+    roadController.current?.abort();
+    roadController.current = new AbortController();
+    setRouteBusy(true);
+    setRouteError("");
+    setRoadRoute(null);
+    setMode("route");
+    setSelected(station);
+    document
+      .getElementById("station-map")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    try {
+      const response = await fetch("/api/routes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origin: { latitude: origin.latitude, longitude: origin.longitude },
+          destinations: [{ id: station.id, location: station.location }],
+          source: station.source || "google",
+          detailed: true,
+        }),
+        signal: roadController.current.signal,
+      });
+      const data = await response.json();
+      if (number !== roadRequest.current) return;
+      if (!response.ok)
+        throw Error(data.message || "The route could not be loaded.");
+      setRoadRoute(data.route);
+      setMetrics((previous) => ({ ...previous, [station.id]: data.route }));
+    } catch (error) {
+      if (number === roadRequest.current)
+        setRouteError(
+          error instanceof Error
+            ? error.message
+            : "The route could not be loaded.",
+        );
+    } finally {
+      if (number === roadRequest.current) setRouteBusy(false);
+    }
+  }
+  function startRoute(station: Station) {
+    if (position) void loadRoadRoute(station, position);
+    else locate(station);
+  }
   const distance = (s: Station) =>
-    position && s.location ? distanceLabel(position, s.location) : null;
+    position
+      ? metrics[s.id]
+        ? roadLabel(metrics[s.id])
+        : metricBusy
+          ? "Calculating driving distance…"
+          : "Driving distance unavailable"
+      : null;
   return (
     <section className="live-discovery wrap section" id="explore">
       <div className="section-heading">
@@ -385,7 +523,7 @@ export default function LiveDiscovery() {
         <button
           className="button outline"
           disabled={busy || locating}
-          onClick={locate}
+          onClick={() => locate()}
         >
           {locating ? (
             <LoaderCircle className="spin" size={18} />
@@ -402,6 +540,8 @@ export default function LiveDiscovery() {
           Your choice: your browser asks permission. This site, Google Maps and
           Photon (OpenStreetMap) use your location for nearby stations, maps and
           a readable address. We do not save your GPS location in our database.
+          Driving-route requests also go to OSRM/FOSSGIS or Google Routes; map
+          tiles use OpenStreetMap when Google is inactive.
         </p>
       </div>
       {locationError && (
@@ -504,9 +644,7 @@ export default function LiveDiscovery() {
             Nearby station list
           </button>
         </div>
-        <a href={mapsLink} target="_blank" rel="noreferrer">
-          Open Google Maps <ExternalLink size={15} />
-        </a>
+        <span>Explore stations and driving routes here</span>
       </div>
       <div className="station-filters">
         <label>
@@ -554,6 +692,11 @@ export default function LiveDiscovery() {
           <p>{message}</p>
         </div>
       )}
+      {routeError && (
+        <p className="location-error" role="status">
+          {routeError} No straight-line estimate is shown as a driving distance.
+        </p>
+      )}
       {nearest && (
         <div className="next-stop">
           <Navigation size={23} />
@@ -597,13 +740,13 @@ export default function LiveDiscovery() {
             {position ? (
               <span>
                 {area === "Your location"
-                  ? "Within 25 km · nearest first"
-                  : "Nearest first from your GPS location"}
+                  ? "Nearby results · sorted by available driving distance"
+                  : "Driving distances from your GPS location"}
               </span>
             ) : (
               <button
                 className="inline-link"
-                onClick={locate}
+                onClick={() => locate()}
                 disabled={busy || locating}
               >
                 Add distances from my location
@@ -699,8 +842,9 @@ export default function LiveDiscovery() {
             </div>
           )}
           <p className="station-list-footnote">
-            Up to 20 mapped results. Distances from your GPS snapshot are
-            straight-line estimates, not driving distances. “Open” describes
+            Up to 20 mapped results. Driving distance and time use the same
+            road-route provider as the in-site route. Estimates exclude live
+            traffic and start from your captured GPS position. “Open” describes
             hours, not a free connector. Availability information may not be
             supplied for every station.
           </p>
@@ -721,7 +865,7 @@ export default function LiveDiscovery() {
                 </b>
               </div>
               <span className="google-maps-attribution" translate="no">
-                Google Maps
+                {mapProvider === "google" ? "Google Maps" : "OpenStreetMap"}
               </span>
             </div>
             <div className="map-mode-controls">
@@ -747,7 +891,7 @@ export default function LiveDiscovery() {
               {selected && position && (
                 <button
                   aria-pressed={mode === "route"}
-                  onClick={() => setMode("route")}
+                  onClick={() => startRoute(selected)}
                 >
                   Route preview
                 </button>
@@ -767,12 +911,62 @@ export default function LiveDiscovery() {
               focusYou={mode === "you"}
               route={mode === "route"}
               onMode={setSynchronized}
+              onProvider={setMapProvider}
+              roadRoute={mode === "route" ? roadRoute : null}
             />
+            {routeBusy && (
+              <p className="route-summary" role="status">
+                Calculating the driving route shown on this map…
+              </p>
+            )}
+            {mode === "route" && roadRoute && (
+              <section
+                className="route-summary"
+                aria-label="Driving route summary"
+              >
+                <h3>{roadLabel(roadRoute)}</h3>
+                <p>
+                  Route:{" "}
+                  {roadRoute.provider === "google"
+                    ? "Google Routes"
+                    : "OSRM · OpenStreetMap"}
+                  . Estimated without live traffic, from your captured GPS
+                  location. Follow posted signs and confirm the entrance.
+                </p>
+                <details>
+                  <summary>Road directions</summary>
+                  <ol>
+                    {roadRoute.steps.map((step, i) => (
+                      <li key={i}>
+                        {step.text}{" "}
+                        <small>
+                          ·{" "}
+                          {step.distanceMeters < 1000
+                            ? `${Math.round(step.distanceMeters)} m`
+                            : `${(step.distanceMeters / 1000).toFixed(1)} km`}
+                        </small>
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+                <p>
+                  <small>
+                    Calculated{" "}
+                    {new Date(roadRoute.calculatedAt).toLocaleTimeString(
+                      "en-IN",
+                      { hour: "2-digit", minute: "2-digit" },
+                    )}
+                    . Refresh your location and route after moving.
+                  </small>
+                </p>
+              </section>
+            )}
             <div className="map-help">
               <MapPin size={17} />
               <p>
-                Pan and zoom the map. Tap a station marker to explore. Open
-                Google Maps for its full photos, reviews and navigation.
+                Pan and zoom the map. Select a station to explore its photos or
+                show its driving route here. The blue dot marks your captured
+                location.
               </p>
             </div>
           </div>
@@ -784,18 +978,6 @@ export default function LiveDiscovery() {
             >
               <div className="detail-eyebrow">EXPLORE BEFORE YOU ARRIVE</div>
               <h3>{selected.name}</h3>
-              {detailBusy && (
-                <p role="status">
-                  Loading place photos, hours and contact details…
-                </p>
-              )}
-              {selected.status && selected.status !== "OPERATIONAL" && (
-                <p className="location-error">
-                  Station reported{" "}
-                  {selected.status.replaceAll("_", " ").toLowerCase()}. Confirm
-                  operation before travelling.
-                </p>
-              )}
               <p className="detail-address">
                 <MapPin size={17} />
                 {selected.address}
@@ -807,161 +989,122 @@ export default function LiveDiscovery() {
                 </p>
               )}
               <div className="detail-actions">
-                <a
+                <button
                   className="button dark"
-                  href={directionsUrl(selected, position)}
-                  target="_blank"
-                  rel="noreferrer"
+                  disabled={routeBusy || locating || !selected.location}
+                  onClick={() => startRoute(selected)}
                 >
                   <Navigation size={17} />
-                  Get driving directions
-                </a>
-                <a
+                  {routeBusy
+                    ? "Loading road route…"
+                    : "Show driving route here"}
+                </button>
+                <button
                   className="button outline"
-                  href={selected.photosUrl || selected.url}
-                  target="_blank"
-                  rel="noreferrer"
+                  onClick={() => setPhotosOpen(true)}
                 >
                   <Camera size={17} />
-                  {selected.source === "openstreetmap"
-                    ? "Find photos on Google Maps"
-                    : "Photos on Google"}
-                </a>
+                  Explore station photos
+                </button>
               </div>
-              <div className="detail-specs">
-                <div>
-                  <span>Opening status</span>
-                  <b>
-                    {selected.openNow === true
-                      ? "Reported open now"
-                      : selected.openNow === false
-                        ? "Reported closed now"
-                        : "Check with operator"}
-                  </b>
-                </div>
-                <div>
-                  <span>Google rating</span>
-                  <b>
-                    {selected.rating
-                      ? `${selected.rating} / 5 · ${selected.ratingCount || 0} reviews`
-                      : "Not supplied"}
-                  </b>
-                </div>
-                <div>
-                  <span>Charging price</span>
-                  <b>Confirm with operator</b>
-                </div>
-                <div>
-                  <span>Total connectors</span>
-                  <b>{selected.connectorCount ?? "Not supplied"}</b>
-                </div>
-              </div>
-              <h4>Connector & power specifications</h4>
-              {selected.connectors.length ? (
-                <div className="connector-specs">
-                  {selected.connectors.map((c, i) => (
-                    <div key={i}>
-                      <div>
-                        <b>{connectorName(c.type)}</b>
-                        <span>
-                          {c.maxChargeRateKw
-                            ? `Up to ${c.maxChargeRateKw} kW`
-                            : "Power not supplied"}{" "}
-                          · {c.count ?? "Unknown"} connectors
-                        </span>
-                      </div>
-                      <div>
-                        <b>
-                          {freshAvailability(c, now)
-                            ? `${c.availableCount} reported available`
-                            : "Live availability unconfirmed"}
-                        </b>
-                        <span>
-                          {c.availabilityLastUpdateTime
-                            ? `Updated ${new Date(c.availabilityLastUpdateTime).toLocaleString("en-IN")}`
-                            : "No update timestamp supplied"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p>
-                  The map provider has not supplied connector or power
-                  specifications for this station. Confirm compatibility with
-                  the operator.
-                </p>
+              {detailBusy && (
+                <p role="status">Loading Google photos, ratings and reviews…</p>
               )}
-              <p className="detail-note">
-                Reported availability expires here after 15 minutes. It can
-                change before arrival. Maximum power depends on your vehicle,
-                equipment and operating conditions.
-              </p>
-              <h4>See the place before you travel</h4>
-              {selected.photos.length ? (
-                <div className="station-photo-grid">
-                  {selected.photos.map((photo, i) => (
-                    <figure key={photo.name}>
-                      <Photo
-                        url={photo.url}
-                        alt={`${selected.name} — Google place photo ${i + 1}`}
-                      />
-                      <figcaption>
-                        {photo.authors.length
-                          ? photo.authors.map((author, j) =>
-                              author.url ? (
-                                <a
-                                  key={j}
-                                  href={author.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  {author.name}
-                                </a>
-                              ) : (
-                                <span key={j}>{author.name}</span>
-                              ),
-                            )
-                          : "Google Maps place photo"}
-                      </figcaption>
-                    </figure>
-                  ))}
-                </div>
-              ) : (
-                <p>
-                  No photo preview was supplied. Explore the station’s Google
-                  Maps page for any available photos.
-                </p>
-              )}
-              <div className="place-contact">
-                {selected.phone && (
-                  <a href={`tel:${selected.phone.replace(/[^\d+]/g, "")}`}>
-                    <Phone size={17} />
-                    {selected.phone}
-                  </a>
-                )}
-                {selected.website && (
-                  <a href={selected.website} target="_blank" rel="noreferrer">
-                    <ExternalLink size={17} />
-                    Operator website
-                  </a>
-                )}
-                <a
-                  href={selected.reviewsUrl || selected.url}
-                  target="_blank"
-                  rel="noreferrer"
+              {selected.rating !== undefined && (
+                <section
+                  className="google-reviews"
+                  aria-label="Google rating and reviews"
                 >
-                  {selected.source === "openstreetmap"
-                    ? "Explore on Google Maps"
-                    : "Read reviews on Google"}{" "}
-                  <ArrowUpRight size={16} />
-                </a>
-              </div>
+                  <span className="google-maps-attribution" translate="no">
+                    Google Maps
+                  </span>
+                  <h4>
+                    {selected.rating} / 5 ★ · {selected.ratingCount ?? 0}{" "}
+                    ratings
+                  </h4>
+                  {!!selected.reviews?.length && (
+                    <>
+                      <p>
+                        Selected reviews supplied by Google, ordered by
+                        relevance.
+                      </p>
+                      {selected.reviews.map((review, i) => (
+                        <article className="google-review" key={i}>
+                          <b>
+                            {review.authorUrl ? (
+                              <a
+                                href={review.authorUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {review.author}
+                              </a>
+                            ) : (
+                              review.author
+                            )}
+                          </b>
+                          <span>
+                            {review.rating !== undefined
+                              ? `${review.rating} / 5 ★`
+                              : ""}{" "}
+                            {review.time}
+                          </span>
+                          <p>
+                            {review.text ||
+                              "This reviewer did not leave written feedback."}
+                          </p>
+                          {review.url && (
+                            <a
+                              href={review.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Original Google review
+                            </a>
+                          )}
+                        </article>
+                      ))}
+                    </>
+                  )}
+                </section>
+              )}
+              {!!selected.connectors.length && (
+                <details className="station-hours">
+                  <summary>Connector and power information</summary>
+                  <ul>
+                    {selected.connectors.map((c, i) => (
+                      <li key={i}>
+                        {connectorName(c.type)}
+                        {c.maxChargeRateKw
+                          ? ` · up to ${c.maxChargeRateKw} kW`
+                          : ""}{" "}
+                        ·{" "}
+                        {freshAvailability(c, now)
+                          ? `${c.availableCount} recently reported available`
+                          : "Live availability unconfirmed"}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              {selected.phone && (
+                <p>
+                  <a href={`tel:${selected.phone.replace(/[^\d+]/g, "")}`}>
+                    <Phone size={16} /> Call the station
+                  </a>
+                </p>
+              )}
+              {selected.website && (
+                <p>
+                  <a href={selected.website} target="_blank" rel="noreferrer">
+                    <ExternalLink size={16} /> Operator website
+                  </a>
+                </p>
+              )}
               {!!selected.hours?.length && (
                 <details className="station-hours">
                   <summary>
-                    <Clock3 size={17} />
-                    Opening hours
+                    <Clock3 size={16} /> Opening hours
                   </summary>
                   <ul>
                     {selected.hours.map((h) => (
@@ -982,12 +1125,12 @@ export default function LiveDiscovery() {
                 </a>
               ))}
               <p className="detail-note">
-                Station details from{" "}
+                Source:{" "}
                 {selected.source === "openstreetmap"
                   ? "OpenStreetMap via Photon"
                   : "Google Maps"}
-                . Public listings are not confirmed ChargeNeighbour partners or
-                reservations.
+                . Confirm vehicle compatibility and entry. Public listings are
+                not ChargeNeighbour partner bookings.
               </p>
             </section>
           ) : (
@@ -1005,6 +1148,60 @@ export default function LiveDiscovery() {
           )}
         </div>
       </div>
+      <dialog
+        ref={photoDialog}
+        className="station-photo-dialog"
+        aria-labelledby="station-photos-title"
+        onCancel={() => setPhotosOpen(false)}
+      >
+        <button
+          className="clear-position photo-dialog-close"
+          aria-label="Close station photos"
+          onClick={() => setPhotosOpen(false)}
+        >
+          <X size={20} />
+        </button>
+        <span className="google-maps-attribution" translate="no">
+          Google Maps
+        </span>
+        <h3 id="station-photos-title">{selected?.name} · station photos</h3>
+        {selected?.photos.length ? (
+          <div className="station-photo-grid">
+            {selected.photos.map((photo, i) => (
+              <figure key={photo.name}>
+                <Photo
+                  url={photo.url}
+                  alt={`${selected.name} · station photo ${i + 1}`}
+                />
+                <figcaption>
+                  {photo.authors.length
+                    ? photo.authors.map((author, j) =>
+                        author.url ? (
+                          <a
+                            href={author.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            key={j}
+                          >
+                            {author.name}
+                          </a>
+                        ) : (
+                          <span key={j}>{author.name}</span>
+                        ),
+                      )
+                    : "Google Maps place photo"}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        ) : (
+          <p>
+            {selected?.source === "openstreetmap"
+              ? "Google photos, ratings and reviews are not connected for this community listing. They will appear here only after the Google integration is activated and an exact Google station is selected. No unrelated photos are substituted."
+              : "Google has not supplied station photos for this place."}
+          </p>
+        )}
+      </dialog>
       <p className="google-policy">
         Google map content and Google Places details are provided under the{" "}
         <a
@@ -1032,7 +1229,23 @@ export default function LiveDiscovery() {
         >
           © OpenStreetMap contributors
         </a>{" "}
-        via Photon, with incomplete community coverage.
+        via Photon, with incomplete community coverage. Road routes use{" "}
+        <a
+          href="https://routing.openstreetmap.de/about.html"
+          target="_blank"
+          rel="noreferrer"
+        >
+          OSRM/FOSSGIS
+        </a>{" "}
+        when Google routing is inactive.{" "}
+        <a
+          href="https://www.openstreetmap.org/fixthemap"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Report a map issue
+        </a>
+        .
       </p>
     </section>
   );

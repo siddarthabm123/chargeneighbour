@@ -10,7 +10,7 @@ import {
   uuid,
 } from "../../lib/http";
 import { commercialReady, operatorDetails } from "../../lib/settings";
-import { validPoint, safeWebLink } from "../../lib/stations";
+import { validPoint, safeWebLink, distanceKm } from "../../lib/stations";
 
 export async function GET(request: Request) {
   try {
@@ -118,6 +118,29 @@ export async function POST(request: Request) {
       };
       if (!validPoint(point))
         throw new HttpError(400, "Enter valid site coordinates.");
+      const evidenceId = applications[0].payload.evidenceId;
+      if (!uuid(evidenceId))
+        throw new HttpError(
+          400,
+          "The applicant must supply a charger photo and GPS capture before publishing.",
+        );
+      const capture = (
+        await (
+          await serviceRest(`host_evidence?id=eq.${evidenceId}&limit=1`)
+        ).json()
+      )[0];
+      if (
+        !capture ||
+        distanceKm(point, {
+          latitude: capture.latitude,
+          longitude: capture.longitude,
+        }) >
+          0.2 + capture.accuracy_m / 1000
+      )
+        throw new HttpError(
+          400,
+          "The listing location does not match the applicant's GPS evidence. Resolve the site discrepancy before publishing.",
+        );
       const power = Number(b.power),
         price = Number(b.pricePaise);
       if (

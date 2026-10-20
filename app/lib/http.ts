@@ -19,11 +19,14 @@ export function sameOrigin(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin)
     throw new HttpError(403, "This request must come from ChargeNeighbour.");
 }
-export async function boundedText(request: Request, max: number) {
+export async function boundedBytes(
+  request: Pick<Request, "headers" | "body">,
+  max: number,
+) {
   if (Number(request.headers.get("content-length")) > max)
     throw new HttpError(413, "Request is too large.");
   const reader = request.body?.getReader();
-  if (!reader) return "";
+  if (!reader) return new Uint8Array();
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {
@@ -46,6 +49,13 @@ export async function boundedText(request: Request, max: number) {
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
+  return bytes;
+}
+export async function boundedText(
+  request: Pick<Request, "headers" | "body">,
+  max: number,
+) {
+  const bytes = await boundedBytes(request, max);
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {

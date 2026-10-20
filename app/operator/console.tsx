@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
+import EvidenceReview from "./evidence";
 import {
   istToIso,
   localTime,
@@ -275,6 +276,9 @@ export default function OperatorConsole() {
                 ))}
               </dl>
               {a.operator_reply && <p>Previous response: {a.operator_reply}</p>}
+              {a.kind === "host" && a.payload.evidenceId && (
+                <EvidenceReview id={a.payload.evidenceId} />
+              )}
               <form
                 className="support-form"
                 onSubmit={(e) => reply(e, a.id, "application")}

@@ -34,19 +34,24 @@ export default function Privacy() {
         identifier, email, name, area, charger/access details, consent and
         timestamps. Support tickets include your email, message, reply and
         status. We use these to manage applications, respond to requests and
-        operate the pilot. We do not sell application data.
+        operate the pilot. We do not sell application data. Host applicants must
+        also upload at least one charger photo with a fresh, precise on-site GPS
+        capture, accuracy and timestamp. These are stored privately in Supabase
+        for manual review by authorised operators; a photo or self-reported GPS
+        does not verify ownership, charger existence or safety. Images are
+        resized and re-encoded to remove embedded metadata.
       </p>
       <h2>Location and map providers</h2>
       <p>
         Location is optional and requested only after you choose Use my
         location. Your coordinates are sent to this website, Google Maps and
         Photon (operated by komoot, using OpenStreetMap data) for nearby search,
-        maps and an approximate readable address. They remain in page memory and
-        are not stored in our application database. Clear my location or reload
-        to clear them from the page. Providers may process requests under their
-        own policies. Your address is copied to your device clipboard only when
-        you choose Copy address; anyone with access to that clipboard can read
-        it.
+        maps and an approximate readable address. Driver search coordinates
+        remain in page memory and are not stored in our application database.
+        Clear my location or reload to clear them from the page. Providers may
+        process requests under their own policies. Your address is copied to
+        your device clipboard only when you choose Copy address; anyone with
+        access to that clipboard can read it.
       </p>
       <p>
         OpenStreetMap station and address data is community maintained, may be
@@ -78,6 +83,17 @@ export default function Privacy() {
         Google station content.
       </p>
       <h2>Security and providers</h2>
+      <p>
+        Driving routes send the selected origin and destination to Google
+        Routes, or to the OSRM service operated by FOSSGIS while Google is
+        inactive. The service may retain technical request logs under its{" "}
+        <a href="https://routing.openstreetmap.de/about.html">
+          privacy and usage information
+        </a>
+        . OpenStreetMap map tiles reveal the viewed map area to its tile
+        service. Route estimates exclude live traffic and are not stored in the
+        application database.
+      </p>
       <p>
         Vercel hosts the website and Supabase stores application data in
         Singapore. These providers may process technical logs under their
@@ -116,6 +132,15 @@ export default function Privacy() {
         provider logs or records subject to a legitimate retention need.
       </p>
       <h2>Payments and service changes</h2>
+      <p>
+        Host photo/GPS evidence follows its application's review retention.
+        Unsubmitted or otherwise unlinked evidence and private files are removed
+        by the cleanup job after two days. When an application is removed after
+        withdrawal, its unlinked photo is removed on a following cleanup run.
+        Approved host evidence remains private for operational review. Storage
+        files need separate provider backups; encrypted application snapshots
+        include metadata only.
+      </p>
       <p>
         Commercial charging and payments remain disabled until operator approval
         and provider setup are complete. We do not collect card or bank details

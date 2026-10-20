@@ -9,7 +9,7 @@ import {
   uuid,
 } from "../../lib/http";
 import { protect } from "../../lib/rate-limit";
-import { rpc } from "../../../db/server";
+import { rpc, serviceRest } from "../../../db/server";
 
 export async function GET(request: Request) {
   try {
@@ -81,6 +81,24 @@ export async function POST(request: Request) {
       );
     let payload: Record<string, unknown>;
     if (kind === "host") {
+      if (!uuid(body.evidenceId))
+        throw new HttpError(
+          400,
+          "Upload a charger photo with a fresh on-site GPS capture before applying.",
+        );
+      const evidence = await (
+        await serviceRest(
+          `host_evidence?id=eq.${body.evidenceId}&user_id=eq.${user.id}&limit=1`,
+        )
+      ).json();
+      if (
+        !evidence[0] ||
+        Date.now() - Date.parse(evidence[0].created_at) > 1800000
+      )
+        throw new HttpError(
+          400,
+          "Upload fresh photo/GPS evidence for your own account.",
+        );
       const name = textField(body.name, 2, 80),
         area = textField(body.area, 2, 80),
         access = textField(body.access, 2, 100),
@@ -105,6 +123,7 @@ export async function POST(request: Request) {
         access,
         permission: true,
         connector: "Type 2 AC",
+        evidenceId: body.evidenceId,
       };
     } else if (kind === "interest") {
       const area = textField(body.area, 2, 80),

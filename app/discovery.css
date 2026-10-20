@@ -457,6 +457,119 @@
   max-height: 650px;
   scrollbar-gutter: stable;
 }
+.open-station-map {
+  isolation: isolate;
+  z-index: 0;
+}
+.open-map-marker {
+  background: transparent;
+  border: 0;
+}
+.open-map-marker span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 38px;
+  border-radius: 18px 18px 18px 4px;
+  background: #214c36;
+  color: white;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px #0004;
+  font-size: 20px;
+}
+.route-summary {
+  padding: 20px 24px;
+  border-top: 1px solid var(--line);
+  background: #f1f5ea;
+}
+.route-summary h3 {
+  font-size: 24px;
+}
+.route-summary p,
+.route-summary li {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.route-summary li {
+  margin: 10px 0;
+}
+.route-summary ol {
+  padding-left: 22px;
+  max-height: 300px;
+  overflow: auto;
+}
+.route-summary summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.station-photo-dialog {
+  width: min(1080px, 94vw);
+  max-height: 90dvh;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper, #fafbf7);
+  color: var(--ink);
+  overflow: auto;
+}
+.station-photo-dialog::backdrop {
+  background: #10291fd9;
+}
+.station-photo-dialog h3 {
+  font-size: 28px;
+  margin: 16px 45px 25px 0;
+}
+.station-photo-dialog p {
+  font-size: 17px;
+  line-height: 1.8;
+  max-width: 750px;
+}
+.photo-dialog-close {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+}
+.station-photo-dialog .station-photo-grid img {
+  height: auto;
+  max-height: 70dvh;
+  object-fit: contain;
+}
+.google-reviews {
+  padding: 22px 0;
+}
+.google-review {
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+.google-review > span {
+  display: block;
+  font-size: 14px;
+  margin-top: 6px;
+}
+.google-review p {
+  white-space: pre-line;
+}
+.host-photo-preview {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin: 15px 0;
+  background: #edf1e5;
+}
+.host-evidence-input {
+  margin: 24px 0;
+}
+.host-evidence-input p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.host-evidence-input input[type="file"] {
+  width: 100%;
+  font: inherit;
+}
 .station-list-heading {
   position: sticky;
   top: 0;

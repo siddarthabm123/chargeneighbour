@@ -1,4 +1,22 @@
 export type Point = { latitude: number; longitude: number };
+export function validEvidencePosition(
+  point: unknown,
+  accuracy: unknown,
+  capturedAt: unknown,
+  now = Date.now(),
+) {
+  const stamp = typeof capturedAt === "string" ? Date.parse(capturedAt) : NaN;
+  return (
+    validPoint(point) &&
+    typeof accuracy === "number" &&
+    Number.isFinite(accuracy) &&
+    accuracy >= 0 &&
+    accuracy <= 100 &&
+    Number.isFinite(stamp) &&
+    now - stamp <= 120000 &&
+    now - stamp >= -60000
+  );
+}
 export type Connector = {
   type?: string;
   maxChargeRateKw?: number;
@@ -21,6 +39,14 @@ export type Station = {
   hours?: string[];
   rating?: number;
   ratingCount?: number;
+  reviews?: {
+    author: string;
+    authorUrl?: string;
+    rating?: number;
+    text: string;
+    time?: string;
+    url?: string;
+  }[];
   connectorCount?: number;
   connectors: Connector[];
   photos: {
@@ -237,6 +263,13 @@ type Place = {
   currentOpeningHours?: { openNow?: boolean; weekdayDescriptions?: string[] };
   rating?: number;
   userRatingCount?: number;
+  reviews?: {
+    authorAttribution?: { displayName?: string; uri?: string };
+    rating?: number;
+    text?: { text?: string };
+    relativePublishTimeDescription?: string;
+    googleMapsUri?: string;
+  }[];
   googleMapsLinks?: { photosUri?: string; reviewsUri?: string };
   evChargeOptions?: {
     connectorCount?: number;
@@ -264,6 +297,14 @@ export function stationFromGoogle(p: Place): Station | null {
     hours: p.currentOpeningHours?.weekdayDescriptions,
     rating: p.rating,
     ratingCount: p.userRatingCount,
+    reviews: (p.reviews || []).slice(0, 5).map((r) => ({
+      author: r.authorAttribution?.displayName || "Google Maps contributor",
+      authorUrl: safeWebLink(r.authorAttribution?.uri),
+      rating: r.rating,
+      text: r.text?.text || "",
+      time: r.relativePublishTimeDescription,
+      url: safeWebLink(r.googleMapsUri, true),
+    })),
     connectorCount: p.evChargeOptions?.connectorCount,
     connectors: p.evChargeOptions?.connectorAggregation || [],
     photos: (p.photos || [])

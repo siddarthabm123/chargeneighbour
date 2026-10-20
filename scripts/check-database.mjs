@@ -51,7 +51,36 @@ grant usage on schema auth to anon,authenticated,service_role;`);
     db.query("select take_allowance('x',2,60)"),
     /permission denied/,
   );
+  await asServer();
+  const evidenceId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+  await db.query(
+    "insert into host_evidence(id,user_id,object_path,latitude,longitude,accuracy_m,captured_at,consent,byte_count) values($1,$2,$3,12.97,77.59,20,now(),true,1000)",
+    [evidenceId, owner, `${owner}/${evidenceId}.jpg`],
+  );
+  await asUser(stranger);
+  assert.equal((await db.query("select * from host_evidence")).rows.length, 0);
+  await assert.rejects(
+    db.query(
+      "select submit_marketplace_request('host',$1::jsonb,gen_random_uuid())",
+      [JSON.stringify({ evidenceId })],
+    ),
+    /owned charger photo/,
+  );
+  await assert.rejects(
+    db.query(
+      "insert into host_evidence(id,user_id,object_path,latitude,longitude,accuracy_m,captured_at,consent,byte_count) values(gen_random_uuid(),$1,'forged',12,77,20,now(),true,1)",
+      [stranger],
+    ),
+    /permission denied/,
+  );
   await asUser(owner);
+  assert.equal((await db.query("select * from host_evidence")).rows.length, 1);
+  await assert.rejects(
+    db.query(
+      "select submit_marketplace_request('host','{}',gen_random_uuid())",
+    ),
+    /charger photo/,
+  );
   const key = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   const application = (
     await db.query(
@@ -61,6 +90,7 @@ grant usage on schema auth to anon,authenticated,service_role;`);
           name: "Synthetic host fixture",
           area: "Synthetic neighbourhood",
           permission: true,
+          evidenceId,
         }),
         key,
       ],
@@ -74,6 +104,7 @@ grant usage on schema auth to anon,authenticated,service_role;`);
           name: "Synthetic host fixture",
           area: "Synthetic neighbourhood",
           permission: true,
+          evidenceId,
         }),
         key,
       ])
@@ -326,6 +357,7 @@ grant usage on schema auth to anon,authenticated,service_role;`);
       "session_ledger",
       "support_tickets",
       "funnel_daily",
+      "host_evidence",
     ]) {
       for (const row of snapshot.tables[table]) {
         const columns = Object.keys(row);

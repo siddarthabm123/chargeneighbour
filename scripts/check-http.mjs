@@ -52,7 +52,12 @@ try {
     )
       assert.match(r.headers.get("content-security-policy"), /nonce-/);
   }
-  for (const path of ["/api/requests", "/api/reservations", "/api/operator"])
+  for (const path of [
+    "/api/requests",
+    "/api/reservations",
+    "/api/operator",
+    "/api/host-evidence?id=11111111-1111-4111-8111-111111111111",
+  ])
     assert.equal(
       (
         await fetch(base + path, {
@@ -79,6 +84,35 @@ try {
     body: "{}",
   });
   assert.equal(other.status, 403);
+  const routeRequest = (body, origin = base) =>
+    fetch(base + "/api/routes", {
+      method: "POST",
+      headers: { "content-type": "application/json", origin },
+      body: JSON.stringify(body),
+    });
+  assert.equal(
+    (await routeRequest({}, "https://untrusted.invalid")).status,
+    403,
+  );
+  assert.equal(
+    (
+      await routeRequest({
+        origin: { latitude: 999, longitude: 77 },
+        destinations: [],
+      })
+    ).status,
+    400,
+  );
+  assert.equal((await routeRequest({ padding: "x".repeat(5100) })).status, 413);
+  assert.equal(
+    (
+      await fetch(base + "/api/host-evidence", {
+        method: "POST",
+        body: new FormData(),
+      })
+    ).status,
+    401,
+  );
   const locationPost = (body, origin = base) =>
     fetch(base + "/api/location", {
       method: "POST",

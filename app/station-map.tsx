@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Point, Station } from "./lib/stations";
+import OpenStationMap from "./open-station-map";
+import type { RoadRoute } from "./lib/road-route";
 type Coord = { lat: number; lng: number };
 type MapInstance = {
   fitBounds: (bounds: Bounds, padding: number) => void;
@@ -13,6 +15,9 @@ type Marker = {
   addListener: (name: string, callback: () => void) => { remove: () => void };
 };
 type MapsApi = {
+  Polyline: new (options: Record<string, unknown>) => {
+    setMap: (map: MapInstance | null) => void;
+  };
   Map: new (
     element: HTMLElement,
     options: Record<string, unknown>,
@@ -68,6 +73,8 @@ export default function StationMap({
   focusYou = false,
   route = false,
   onMode,
+  onProvider,
+  roadRoute,
 }: {
   stations: Station[];
   position: Point | null;
@@ -78,6 +85,8 @@ export default function StationMap({
   focusYou?: boolean;
   route?: boolean;
   onMode: (synchronized: boolean) => void;
+  onProvider: (provider: "google" | "openstreetmap") => void;
+  roadRoute?: RoadRoute | null;
 }) {
   const element = useRef<HTMLDivElement>(null),
     map = useRef<MapInstance | null>(null),
@@ -85,6 +94,7 @@ export default function StationMap({
     select = useRef(onSelect);
   const [ready, setReady] = useState(false),
     [failed, setFailed] = useState(false);
+  const [openConfig, setOpenConfig] = useState<{ tiles: string } | null>(null);
   select.current = onSelect;
   useEffect(() => {
     let cancelled = false;
@@ -92,7 +102,11 @@ export default function StationMap({
       .then((r) => r.json())
       .then(async (config) => {
         if (!config.browserKey || !config.mapId) {
-          onMode(false);
+          setOpenConfig({
+            tiles:
+              config.tiles || "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+          });
+          onProvider("openstreetmap");
           return;
         }
         const maps = await mapsSdk(config.browserKey);
@@ -106,6 +120,7 @@ export default function StationMap({
           streetViewControl: false,
         });
         setReady(true);
+        onProvider("google");
         onMode(true);
       })
       .catch(() => {
@@ -117,7 +132,27 @@ export default function StationMap({
     return () => {
       cancelled = true;
     };
-  }, [onMode]);
+  }, [onMode, onProvider]);
+  useEffect(() => {
+    if (
+      !ready ||
+      !map.current ||
+      !api.current ||
+      !roadRoute?.coordinates.length
+    )
+      return;
+    const path = roadRoute.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    const line = new api.current.Polyline({
+      map: map.current,
+      path,
+      strokeColor: "#214c36",
+      strokeWeight: 6,
+    });
+    const bounds = new api.current.LatLngBounds();
+    path.forEach((p) => bounds.extend(p));
+    map.current.fitBounds(bounds, 55);
+    return () => line.setMap(null);
+  }, [ready, roadRoute]);
   useEffect(() => {
     if (!ready || !map.current || !api.current) return;
     const markers: Marker[] = [],
@@ -158,7 +193,13 @@ export default function StationMap({
         }),
       );
     }
-    if (focusYou && position) {
+    if (roadRoute?.coordinates.length) {
+      const routeBounds = new api.current.LatLngBounds();
+      roadRoute.coordinates.forEach(([lng, lat]) =>
+        routeBounds.extend({ lat, lng }),
+      );
+      map.current.fitBounds(routeBounds, 55);
+    } else if (focusYou && position) {
       map.current.panTo({ lat: position.latitude, lng: position.longitude });
       map.current.setZoom(16);
     } else if (selected?.location) {
@@ -172,7 +213,20 @@ export default function StationMap({
       markers.forEach((marker) => (marker.map = null));
       listeners.forEach((l) => l.remove());
     };
-  }, [stations, position, selected, ready, focusYou]);
+  }, [stations, position, selected, ready, focusYou, roadRoute]);
+  if (openConfig)
+    return (
+      <OpenStationMap
+        stations={stations}
+        position={position}
+        selected={selected}
+        onSelect={onSelect}
+        focusYou={focusYou}
+        route={roadRoute}
+        tiles={openConfig.tiles}
+        onReady={() => onMode(true)}
+      />
+    );
   return (
     <>
       <div
@@ -180,9 +234,9 @@ export default function StationMap({
         className="controlled-map"
         role="region"
         aria-label="Station map with filtered charger markers"
-        hidden={!ready || route}
+        hidden={!ready || (route && !roadRoute)}
       />
-      {(!ready || route) && (
+      {(!ready || (route && !roadRoute)) && (
         <iframe
           src={fallback}
           title={title}

@@ -1,5 +1,15 @@
 import "server-only";
+import { createClient } from "@supabase/supabase-js";
 import { HttpError } from "../app/lib/http";
+export function serviceClient() {
+  const url = process.env.SUPABASE_URL,
+    key = process.env.SUPABASE_SECRET_KEY;
+  if (!url || !key || !/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(url))
+    throw new HttpError(503, "Storage is temporarily unavailable.");
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 export async function serviceRest(path: string, options: RequestInit = {}) {
   const base = process.env.SUPABASE_URL,

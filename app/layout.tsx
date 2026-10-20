@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 import AnalyticsChoice from "./analytics-choice";
 export const dynamic = "force-dynamic";
 

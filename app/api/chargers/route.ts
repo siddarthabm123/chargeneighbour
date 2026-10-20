@@ -6,7 +6,11 @@ import {
 import { validPoint, stationFromGoogle, type Point } from "../../lib/stations";
 import { nearbyOpenStations, openSearchPoint } from "../../lib/photon-server";
 async function search(request: Request, query: string, point?: Point) {
-  if (!process.env.GOOGLE_PLACES_API_KEY) {
+  if (
+    !process.env.GOOGLE_PLACES_API_KEY ||
+    !process.env.GOOGLE_MAPS_BROWSER_KEY ||
+    !process.env.GOOGLE_MAPS_ID
+  ) {
     const center = point || (await openSearchPoint(request, query));
     if (!center || !validPoint(center))
       return json({

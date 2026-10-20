@@ -29,6 +29,7 @@ import {
 import { hostEstimate } from "./lib/model";
 import LiveDiscovery from "./live-discovery";
 import { campaignSource } from "./analytics-choice";
+import HostEvidenceInput from "./host-evidence-input";
 
 type User = { name: string; email: string } | null;
 type Activity = {
@@ -62,6 +63,7 @@ export default function Marketplace({ user }: { user: User }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const submission = useRef({ body: "", key: "" });
+  const [hostEvidence, setHostEvidence] = useState("");
   const estimate = hostEstimate(hours, days);
 
   useEffect(() => {
@@ -86,6 +88,7 @@ export default function Marketplace({ user }: { user: User }) {
     if (modal === "activity" && user) void loadActivity();
   }, [modal]);
   function open(type: Modal) {
+    if (type === "host") setHostEvidence("");
     setError("");
     setSuccess("");
     setModal(type);
@@ -163,6 +166,12 @@ export default function Marketplace({ user }: { user: User }) {
   }
   function submitHost(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!hostEvidence) {
+      setError(
+        "Upload at least one charger photo with fresh on-site GPS before applying.",
+      );
+      return;
+    }
     const f = new FormData(e.currentTarget);
     void submit(
       {
@@ -172,6 +181,7 @@ export default function Marketplace({ user }: { user: User }) {
         power: f.get("power"),
         access: f.get("access"),
         permission: f.get("permission") === "on",
+        evidenceId: hostEvidence,
       },
       "Your host application is saved. It is pending review; your charger is not listed publicly. You can view or withdraw it in My activity.",
     );
@@ -350,8 +360,8 @@ export default function Marketplace({ user }: { user: User }) {
                 </span>
                 <h3>Find your fit.</h3>
                 <p>
-                  Search your destination and open current station information
-                  in Google Maps.
+                  Search your destination and compare mapped stations inside
+                  ChargeNeighbour.
                 </p>
               </article>
               <article>
@@ -361,8 +371,8 @@ export default function Marketplace({ user }: { user: User }) {
                 </span>
                 <h3>Check before you travel.</h3>
                 <p>
-                  Open the station’s Google Maps page. Confirm the connector,
-                  opening hours and entry with its operator.
+                  Explore station photos and supplied reviews. Confirm the
+                  connector, opening hours and entry with its operator.
                 </p>
               </article>
               <article>
@@ -372,15 +382,15 @@ export default function Marketplace({ user }: { user: User }) {
                 </span>
                 <h3>Get directions. Carry on.</h3>
                 <p>
-                  Use Google Maps for directions and contact the operator for
-                  charging, pricing and payment.
+                  Preview the road route and estimated driving distance here.
+                  Contact the operator for charging, pricing and payment.
                 </p>
               </article>
             </div>
             <p className="workflow-note">
-              Discover real stations through Google Maps. Host applications are
-              open; ChargeNeighbour reservations require approved participating
-              hosts.
+              Explore real mapped stations and road routes here. Host
+              applications are open; ChargeNeighbour reservations require
+              approved participating hosts.
             </p>
           </div>
         </section>
@@ -743,6 +753,7 @@ export default function Marketplace({ user }: { user: User }) {
                       <span>3</span>Agree pricing, payouts & support
                     </span>
                   </div>
+                  <HostEvidenceInput onReady={setHostEvidence} />
                   <label className="checkbox-label">
                     <input name="permission" type="checkbox" required />I own or
                     am authorised to offer this charger and parking space, and
@@ -750,14 +761,18 @@ export default function Marketplace({ user }: { user: User }) {
                   </label>
                   <p className="tiny">
                     We save this application and your account email for pilot
-                    onboarding. No address, identity document or bank details
-                    are collected here.{" "}
+                    onboarding. Your charger photo and precise GPS capture are
+                    saved privately for review. No identity documents or bank
+                    details are collected here.{" "}
                     <a className="inline-link" href="/privacy">
                       Privacy details
                     </a>
                   </p>
                   {user ? (
-                    <button className="button dark full" disabled={busy}>
+                    <button
+                      className="button dark full"
+                      disabled={busy || !hostEvidence}
+                    >
                       {busy ? (
                         <LoaderCircle className="spin" size={16} />
                       ) : (
