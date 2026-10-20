@@ -1100,23 +1100,6 @@ export default function LiveDiscovery() {
               </div>
               <div className="detail-eyebrow">EXPLORE BEFORE YOU ARRIVE</div>
               <h3>{selected.name}</h3>
-              <p className="compatibility-badge">
-                {stationCategory(selected) === "swap"
-                  ? "Battery-swap site · check supported vehicle"
-                  : unknownSpecs(selected, connector, power)
-                    ? "Compatibility unknown · confirm connector and power"
-                    : "Connector information supplied · confirm your vehicle"}
-              </p>
-              <p className="detail-address">
-                <MapPin size={17} />
-                {selected.address}
-              </p>
-              {distance(selected) && (
-                <p className="distance-label">
-                  <Navigation size={16} />
-                  {distance(selected)}
-                </p>
-              )}
               <div className="detail-actions">
                 <button
                   className="button dark"
@@ -1139,6 +1122,23 @@ export default function LiveDiscovery() {
                   Explore station photos
                 </button>
               </div>
+              <p className="compatibility-badge">
+                {stationCategory(selected) === "swap"
+                  ? "Battery-swap site · check supported vehicle"
+                  : unknownSpecs(selected, connector, power)
+                    ? "Compatibility unknown · confirm connector and power"
+                    : "Connector information supplied · confirm your vehicle"}
+              </p>
+              <p className="detail-address">
+                <MapPin size={17} />
+                {selected.address}
+              </p>
+              {distance(selected) && (
+                <p className="distance-label">
+                  <Navigation size={16} />
+                  {distance(selected)}
+                </p>
+              )}
               {detailBusy && (
                 <p role="status">Loading Google photos, ratings and reviews…</p>
               )}

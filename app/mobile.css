@@ -193,6 +193,7 @@ details.station-notice {
   }
   .station-workspace,
   .station-workspace.compact-list {
+    scroll-margin-top: 12px;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
