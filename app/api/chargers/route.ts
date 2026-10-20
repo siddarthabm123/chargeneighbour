@@ -18,7 +18,7 @@ async function search(request: Request, query: string, point?: Point) {
       stations: await nearbyOpenStations(request, center),
       source: "openstreetmap",
       message:
-        "Nearby stations from OpenStreetMap. Coverage may be incomplete; opening hours and live connector availability are unconfirmed. Open Google Maps for photos and operator details.",
+        "Nearby stations from OpenStreetMap. Coverage may be incomplete and can include vehicle-specific charging or battery-swap sites. Confirm your vehicle, connector and access before travelling; hours and live availability are unconfirmed.",
       fetchedAt: new Date().toISOString(),
     });
   }

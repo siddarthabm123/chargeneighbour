@@ -158,6 +158,7 @@ export default function LiveDiscovery() {
         return;
       }
       setStations(data.stations || []);
+      setMessage(data.message || "");
       setNow(Date.now());
       if (!data.stations?.length)
         setMessage(
