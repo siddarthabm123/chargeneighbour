@@ -4,7 +4,7 @@
 
 ## Delivered
 
-- Discovery appears before the marketing hero. The phone layout starts with a compact search and optional location action.
+- The homepage opens with the introduction and home-charging concept photo on desktop and phones. “Find EV chargers” jumps to the compact search and optional location action below it.
 - The mobile map uses an expandable list/detail sheet, selected-station back control and larger navigation/map touch targets.
 - Filters explicitly distinguish unknown specifications and exclude named battery-swap sites by default. Unknown records never establish connector compatibility or free availability.
 - Driver location stays a snapshot. A stale-location notice and fresh route capture prevent treating an old position as current. Road retry remains available after failure.

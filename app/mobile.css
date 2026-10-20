@@ -337,6 +337,6 @@ details.station-notice {
     font-size: 42px;
   }
   .hero-visual {
-    display: none;
+    display: block;
   }
 }

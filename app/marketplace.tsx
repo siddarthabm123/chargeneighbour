@@ -269,7 +269,6 @@ export default function Marketplace({ user }: { user: User }) {
         </div>
       </header>
       <main id="main">
-        <LiveDiscovery />
         <section className="hero wrap">
           <div className="hero-copy">
             <div className="eyebrow">
@@ -343,6 +342,7 @@ export default function Marketplace({ user }: { user: User }) {
             <span className="concept-label">AI-generated concept image</span>
           </div>
         </section>
+        <LiveDiscovery />
         <section id="how" className="how-section">
           <div className="wrap">
             <div className="section-heading">

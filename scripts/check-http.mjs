@@ -97,8 +97,9 @@ try {
   );
   const demoHome = await (await fetch(base)).text();
   assert.ok(
-    demoHome.indexOf('id="explore"') < demoHome.indexOf('class="hero wrap"'),
-    "Discovery precedes the marketing hero",
+    demoHome.indexOf('class="hero wrap"') >= 0 &&
+      demoHome.indexOf('class="hero wrap"') < demoHome.indexOf('id="explore"'),
+    "The homepage opens with the hero before station discovery",
   );
   assert.ok(
     demoHome.includes("My EV connections"),
