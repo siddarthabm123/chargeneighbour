@@ -1,11 +1,12 @@
 # ChargeNeighbour
+
 ## Your neighbourhood. Fully charged.
 
-Prepared 19 October 2026. This is a proposed business and pilot plan, not a statement of operating traction.
+Updated 20 October 2026. This is a proposed business and pilot plan, not a statement of operating traction. [Download the editable pitch deck](/ChargeNeighbour-pilot-pitch.pptx).
 
 ### The 45-second pitch
 
-An EV charger can sit unused while another driver nearby needs a planned top-up. ChargeNeighbour aims to make those spare hours bookable. Drivers find a compatible neighbourhood charger, see the price, and request a time. Hosts confirm parking and entry, then earn from the energy delivered. We would start in Bengaluru with accessible Type 2 AC car chargers and a small, reviewed host network. The proposed model takes a 15% commission on completed sessions. Our first task is to prove that access is reliable, drivers return, and both the host and platform economics work.
+An EV charger can sit unused while another driver nearby needs a planned top-up. ChargeNeighbour aims to make those spare hours bookable. Drivers find a compatible neighbourhood charger, see the price, and request a time. Hosts confirm parking and entry, then earn from the energy delivered. We propose a concentrated first area with accessible Type 2 AC car chargers and a small, reviewed host network. The first operating area follows verified supply and driver demand. The proposed model takes a 15% commission on completed sessions. Our first task is to prove that access is reliable, drivers return, and both the host and platform economics work.
 
 ### Customer and use case
 
@@ -24,13 +25,13 @@ Hosts set an agreed per-kWh rate. A proposed 15% commission is deducted from the
 
 Illustrative session, before tax:
 
-| Item | Amount |
-| --- | ---: |
-| 10 kWh at ₹16/kWh | ₹160 |
-| Platform revenue at 15% | ₹24 |
-| Host proceeds after commission | ₹136 |
-| Assumed electricity cost at ₹8/kWh | ₹80 |
-| Host surplus before other costs | ₹56 |
+| Item                               | Amount |
+| ---------------------------------- | -----: |
+| 10 kWh at ₹16/kWh                  |   ₹160 |
+| Platform revenue at 15%            |    ₹24 |
+| Host proceeds after commission     |   ₹136 |
+| Assumed electricity cost at ₹8/kWh |    ₹80 |
+| Host surplus before other costs    |    ₹56 |
 
 Platform revenue is not profit. Payment fees, support, refunds, incentives, acquisition and operating costs must be deducted. ₹8/kWh is an assumption, not a verified Bengaluru tariff. Demand charges, losses, parking costs, maintenance, installation changes and taxes may materially change the outcome.
 
@@ -40,10 +41,10 @@ The website's monthly host estimate assumes 7.2 kW × booked hours/day × booked
 
 Accept applications nationwide, then select a concentrated first cohort based on demand and accessible supply. Indiranagar, HSR Layout and Whitefield are possible Bengaluru pilot areas, not claimed live host coverage. Public station discovery is separate from the participating host network.
 
-1. Interview at least 20 prospective hosts and 30 drivers before committing to density targets.
-2. Target 20 approved, accessible hosts across the candidate areas; revise the geography if demand is too scattered.
+1. Interview 20–30 prospective drivers and interview potential hosts before committing to density targets.
+2. Target 5–10 approved, accessible hosts in a concentrated first area; revise the geography if demand is too scattered.
 3. Operate a supervised first cohort and record every request, host response, arrival, meter reading and completion.
-4. Evaluate at least 100 paid sessions once commercial readiness is complete. These are targets, not results.
+4. Evaluate 30–50 supervised sessions once commercial readiness is complete. These are targets, not results.
 5. Proposed expansion gates: at least 95% successful entry among confirmed arrivals, at least 90% completed confirmed sessions, at least 25% driver repeat usage within 30 days, and non-negative session contribution after variable costs. Thresholds are management assumptions to validate; cohort size and measurement definitions must accompany reported results.
 
 Host surplus, affordable acquisition, and useful booking density matter as much as registrations. Do not report sample requests or withdrawn interest as customers, live chargers or completed sessions.
@@ -54,7 +55,7 @@ The idea is not simply another charger map. The intended value is host-confirmed
 
 ### Current website capability
 
-The public website supports real Google Maps location searches across India, host economics estimates, authenticated host applications and pilot interest, and private account activity with withdrawal. New applications use one Supabase database for all locations; historical Sites records remain with their original identities. The Vercel deployment uses Supabase email sign-in. Direct Google Places results are implemented but await billing and API activation. No commercial charging session, charger telemetry, payment, automatic email or host verification is active.
+The public website supports real embedded Google Maps searches across India, host economics estimates, authenticated host applications and pilot interest, paginated private account activity with withdrawal, and private support without sign-in. One Supabase database serves all locations. The operator workspace implements reviewed host onboarding, offered hours, reservations, metering, support replies and settlement records. Signed payment webhooks, atomic conflict protection, private daily retention and encrypted application snapshots have isolated database tests. The database upgrade has been applied and live access controls verified. Commercial charging and payments remain gated: actual operator details, controlled support contact, verified hosts, production SMTP, Google activation, merchant approval and supervised provider acceptance are still required. No live host inventory, payment, charging session, charger telemetry or automatic email delivery is claimed.
 
 ### A credible ask
 
@@ -70,11 +71,10 @@ Do not claim a funding valuation, guaranteed returns, approved payment partnersh
 
 Sources reviewed 19 October 2026. References do not imply endorsement or partnership.
 
-
 ## Map and station explorer update
 
 The site now includes an interactive Google map with real station markers and satellite controls. Optional browser geolocation shows a captured position and accuracy; coordinates are sent in a POST body for nearby search, kept in page memory and excluded from the application database. The customer can clear or refresh the position. Google maps and directions receive coordinates only after the customer chooses location use.
 
 Detailed station cards and the photo gallery require the private GOOGLE_PLACES_API_KEY and Google billing/API activation, which remain pending. The integration supports connector type, maximum kW, connector counts, opening hours, contact details, Google ratings, attributed Google photos and directions. Availability is labelled recent only for explicit counts updated within 15 minutes. Nearest recommendations apply to returned compatible stations with recent reported availability, not a guaranteed free charger. Driving distance and time are provided by Google directions; displayed card distances are straight-line estimates.
 
-Google search and photo API calls share the global 100-request daily allowance. API data and photos are not persisted or cached by this app. Run scripts/check-stations.mjs to verify geographic validation, matching, stale availability, photo attribution and direction links.
+Google search, detail and photo API calls share the global 100-request daily allowance. API data and photos are not persisted or cached by this app. Run scripts/check-stations.mjs to verify geographic validation, matching, stale availability, photo attribution and direction links.

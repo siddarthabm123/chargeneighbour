@@ -1,0 +1,110 @@
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+const port = 5193,
+  base = `http://localhost:${port}`;
+const server = spawn(
+  process.execPath,
+  ["node_modules/next/dist/bin/next", "start", "-p", String(port)],
+  {
+    env: {
+      ...process.env,
+      APP_URL: `https://localhost:${port}`,
+      GOOGLE_PLACES_API_KEY: "",
+      GOOGLE_MAPS_BROWSER_KEY: "",
+      SUPABASE_URL: "",
+      SUPABASE_PUBLISHABLE_KEY: "",
+      SUPABASE_SECRET_KEY: "",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  },
+);
+let output = "";
+server.stdout.on("data", (c) => (output += c.toString()));
+server.stderr.on("data", (c) => (output += c.toString()));
+try {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      if ((await fetch(base)).ok) break;
+    } catch {}
+    if (attempt > 100)
+      throw Error("Server did not start: " + output.slice(-1000));
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  for (const path of [
+    "/",
+    "/privacy",
+    "/terms",
+    "/support",
+    "/hosts",
+    "/pilot",
+    "/status",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/opengraph-image",
+  ]) {
+    const r = await fetch(base + path);
+    assert.equal(r.status, 200, path);
+    assert.match(r.headers.get("x-content-type-options"), /nosniff/);
+    if (
+      !path.includes("robots") &&
+      !path.includes("sitemap") &&
+      !path.includes("opengraph")
+    )
+      assert.match(r.headers.get("content-security-policy"), /nonce-/);
+  }
+  for (const path of ["/api/requests", "/api/reservations", "/api/operator"])
+    assert.equal(
+      (
+        await fetch(base + path, {
+          headers: { "oai-authenticated-user-id": "forged" },
+        })
+      ).status,
+      401,
+      path,
+    );
+  const callback = await fetch(
+    base + "/auth/callback?next=//untrusted.invalid",
+    { redirect: "manual" },
+  );
+  assert.equal(
+    new URL(callback.headers.get("location")).host,
+    `localhost:${port}`,
+  );
+  const other = await fetch(base + "/api/chargers", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      origin: "https://untrusted.invalid",
+    },
+    body: "{}",
+  });
+  assert.equal(other.status, 403);
+  const large = await fetch(base + "/api/chargers", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", origin: base },
+    body: JSON.stringify({
+      latitude: 1,
+      longitude: 1,
+      padding: "x".repeat(600),
+    }),
+  });
+  assert.equal(large.status, 413);
+  assert.equal((await fetch(base + "/api/chargers?q=Bengaluru")).status, 503);
+  assert.equal(
+    (await fetch(base + "/api/chargers/photo?name=../secret")).status,
+    400,
+  );
+  const webhook = await fetch(base + "/api/payments/webhook", {
+    method: "POST",
+    body: "{}",
+  });
+  assert.equal(webhook.status, 503);
+  assert.equal((await fetch(base + "/api/maintenance")).status, 401);
+  const map = await (await fetch(base + "/api/map-config")).json();
+  assert.equal(map.browserKey, null);
+  console.log(
+    "PASS: production HTTP pages, share image, indexing metadata, security headers, private routes, forged identity rejection, callback safety, bounded/origin-checked location requests and disabled unconfigured services.",
+  );
+} finally {
+  server.kill();
+}

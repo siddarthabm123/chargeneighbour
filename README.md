@@ -1,54 +1,58 @@
 # ChargeNeighbour
 
-## Find EV charging. Share your home charger.
+## Find a charge. Share your charger.
 
-**ChargeNeighbour helps drivers discover real EV charging stations across India and lets home charger owners apply to share their unused charging hours with nearby drivers.**
+ChargeNeighbour helps EV drivers discover real public charging stations and invites owners to share accessible home chargers through a verified neighbourhood pilot.
 
-[Open the website](https://chargeneighbour-theta.vercel.app) · [Explore the real map](https://chargeneighbour-theta.vercel.app/#explore) · [Read the pitch brief](public/pitch-brief.md)
+**Website:** https://chargeneighbour-theta.vercel.app
 
-| For EV drivers | For charger owners | The business idea |
-| --- | --- | --- |
-| Find stations, explore the place and get directions before travelling. | Apply to offer an existing home charger and suitable parking space. | Build a reviewed charger-sharing network, with a proposed fee on completed sessions. |
+**Repository:** https://github.com/siddarthabm123/chargeneighbour
 
-![ChargeNeighbour concept: an EV charging in a neighbourhood driveway](public/images/neighbourhood-hero.webp)
-*AI-generated concept artwork. It does not represent an onboarded host or an operating partnership.*
+**Pitch deck:** [Download the editable ten-slide presentation](https://chargeneighbour-theta.vercel.app/ChargeNeighbour-pilot-pitch.pptx). Pilot targets and economics are clearly labelled assumptions; no operating traction is claimed.
 
-### What works today
+Drivers can explore Google Maps and apply for the pilot. Hosts can submit an application for review. The proposed business earns a 15% commission on metered sessions after operational approval. Commercial charging is **not currently open**.
 
-- Interactive Google map with real charging-station markers, pan, zoom and satellite imagery.
-- Optional **Use my location**, with captured coordinates and accuracy. Location can be refreshed or cleared; it is not stored in the application database.
-- Google Maps links to explore station photos, reviews and driving directions.
-- Supabase email sign-in, private account activity, host applications, pilot interest and withdrawal.
-- Clear host economics assumptions and a downloadable pitch brief. No invented traction or guaranteed earnings.
+![AI-generated concept image, not a real participating host](public/images/neighbourhood-hero.webp)
 
-### What still needs activation
+### Current capabilities
 
-| Capability | Status |
-| --- | --- |
-| Embedded Google map and external place exploration | Live |
-| In-site connector specifications, maximum kW, Google photo gallery and ratings | Implemented; Google billing, Places API activation and server key are pending |
-| Nearest compatible station with recently reported connector availability | Implemented; depends on the Google data above. Missing or stale information is shown as unconfirmed |
-| Public email sign-in delivery | Requires suitable Supabase SMTP setup; the default service restricts recipients and volume |
-| Host reservations, payments and payouts | Not enabled; host approval, operations and payment-provider onboarding are required |
+| Capability                           | Implementation and activation                                                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Public charging map                  | Real Google embedded map, city/PIN search, optional location snapshot and Google directions                                                                                    |
+| Detailed Google cards/photos         | Server integration implemented; **Google billing/API key still required**                                                                                                      |
+| Synchronized filtered markers        | Implemented; requires a separate referrer-restricted Maps JavaScript browser key and actual map ID                                                                             |
+| Host applications and pilot interest | Verified Supabase identity, database ownership RLS, atomic duplicate protection and paginated account activity                                                                 |
+| Email sign-in                        | Supabase callback configured; **custom production SMTP remains required** for general-public delivery                                                                          |
+| Private support                      | No sign-in required; private receipt token, protected queue and operator responses                                                                                             |
+| Operator workspace                   | Host approvals, offered schedules, sessions, support, campaign counts and settlement records; requires an explicitly trusted account UUID                                      |
+| Participating host inventory         | Real approved records only; exact residential locations remain private                                                                                                         |
+| Reservations                         | Transactional conflict checks, expiring requests, confirmation/cancellation and participant-only records; **commercial activation gated**                                      |
+| Session metering                     | Supervised start/end readings calculate the actual energy charge                                                                                                               |
+| Payments                             | Server-created Razorpay orders, signed captured-payment/full-refund webhooks and replay-safe ledger; **merchant approval, credentials and acceptance testing remain required** |
+| Host settlements                     | Records externally completed payouts and references; automatic transfers and partial refunds are not implemented                                                               |
+| Privacy and terms                    | Public pilot notices, support/deletion request channel and retention process; actual operator details and final commercial terms remain required                               |
+| Campaign measurement                 | Optional consent, aggregate counts and idempotent saved-application conversion counts                                                                                          |
+| Maintenance and recovery             | Private daily retention cron, sanitized logs, health endpoint and encrypted small application-data snapshots with isolated restore checks                                      |
+| Sharing and indexing                 | Canonical metadata, share image, robots and sitemap                                                                                                                            |
 
-A station being **open** does not mean a connector is free. Availability is only labelled recently reported when Google provides an explicit connector count and an update within 15 minutes. Distances on cards are straight-line estimates; Google directions provide the road route. A Google listing is not automatically a ChargeNeighbour partner.
+No public Google station is automatically a ChargeNeighbour partner. No fabricated homes, bookings, customer traction, delivered energy or earnings are presented as real.
 
-### How the proposed marketplace works
+### Public and private pages
 
-1. Drivers discover nearby charging options and confirm compatibility, opening hours, entry and pricing.
-2. Owners apply with charger power, neighbourhood and parking-access information.
-3. Hosts must complete equipment, permission, access, pricing and operational review before offering reservations.
-4. A future commercial service would record delivered energy and arrange payments and settlement through an approved provider.
+- Public: `/`, `/hosts`, `/pilot`, `/privacy`, `/terms`, `/support`, `/status`
+- Account applications: homepage → My activity
+- Operator workspace: `/operator`, restricted to trusted Supabase app metadata or the private `ADMIN_USER_IDS` UUID allow-list
+- Health: `/api/health`
+- Payment webhook: `/api/payments/webhook`
+- Private retention cron: `/api/maintenance`
 
-The proposed 15% commission and earnings illustrations are hypotheses, not active charges or promises. See [the pitch brief](public/pitch-brief.md) and [launch plan](public/launch-plan.md) for assumptions, evidence and operational requirements.
+### Stack and security
 
-### Technology
+Next.js 16, React 19, TypeScript, Supabase Auth/Postgres and Vercel. Application ownership comes from verified Supabase user IDs, never identity headers or email matching. User application reads/writes use the signed-in user's database session and RLS. Privileged inventory, support and payment operations use private server credentials behind explicit application authorization.
 
-**Next.js 16 · React 19 · TypeScript · Vercel · Supabase · Google Maps / Places**
+Writes check origin and bounded JSON. Database transactions serialize submissions and competing reservation requests. API protection uses daily keyed network hashes and database-enforced allowances. Google search, detail and photo calls share a hard **100-call UTC-day cap**, plus per-client limits. Photo links are signed and expire. No Google station/photo content or GPS snapshots are persisted in the application database.
 
-The app uses Supabase for email authentication and persistent application records. Identity is verified server-side with getUser; incoming identity headers are never trusted. Session cookies are HTTP-only. Server-only database credentials never enter the browser bundle.
-
-The original Sites deployment uses a separate identity system. Vercel account IDs are prefixed with `supabase:`; historical records are not reassigned by email address.
+The public map falls back transparently when controlled-map configuration is absent. Straight-line card distances and recently reported connector counts do not establish driving time or guaranteed access.
 
 ### Local development
 
@@ -60,32 +64,27 @@ cp .env.example .env.local
 npm run dev
 ```
 
-The development server runs at http://localhost:5180. Supply your own values in the ignored local environment file.
+The development server uses port 5180. The ignored local environment must contain your own configuration. Never commit credentials or put server credentials in a NEXT_PUBLIC variable.
 
-| Variable | Purpose |
-| --- | --- |
-| SUPABASE_URL | Supabase project URL |
-| SUPABASE_PUBLISHABLE_KEY | Supabase public authentication key |
-| SUPABASE_SECRET_KEY | Private server database credential; never use a NEXT_PUBLIC prefix |
-| APP_URL | Canonical site URL, used for authentication callbacks |
-| GOOGLE_PLACES_API_KEY | Optional private key after Google activation |
+Apply the executable files in `supabase/migrations/` in timestamp order to a new database. Legacy source files under `docs/migration-history/` are references only. For this existing project the launch schemas were applied in the SQL editor; reconcile migration history before adopting automated CLI pushes. Do not blindly rerun the full schema on an upgraded project.
 
-Apply the SQL in `supabase/migrations/` for a new database. The quota function enforces an atomic **100-request daily allowance**, shared by station search and photo calls for this deployment. Browser roles have no access to this table or function. API data and photo content are not persisted by this app.
-
-In Supabase Auth, set the production Site URL and allow `https://chargeneighbour-theta.vercel.app/auth/callback**`. Use a separate local redirect when developing. Email links should be opened in the same browser to preserve the PKCE verifier.
-
-### Checks and publishing
+### Validation
 
 ```bash
 npm run check
 node scripts/check-stations.mjs
+node scripts/check-safety.mjs
+node scripts/check-database.mjs
 npm run build
+node scripts/check-http.mjs
 ```
 
-This repository is connected to the **chargeneighbour** Vercel project. Push reviewed updates to **main** to trigger a production build. Feature branches receive Vercel previews according to the project's protection settings. Maintain this README and the feature-status table when capabilities change.
+CI performs these checks on Node 24, including starting a local production server for HTTP checks. Database tests use isolated PostgreSQL and synthetic fixtures. They cover RLS isolation, application retries, quotas, host review, overlapping reservations, measured billing, payment/refund replay, withdrawal and encrypted application-data restoration. They do not certify provider activation, electrical safety or production multi-connection concurrency.
 
-Never commit `.env.local`, `.vercel/`, authentication tokens or server API keys. Runtime secrets belong in Vercel's environment settings.
+### Publishing and commercial activation
 
-### Before commercial charging
+Main-branch pushes trigger the connected Vercel project. Feature branches can use Vercel previews according to project settings. Keep this feature table and the [operator runbook](docs/operations.md) current.
 
-Identify the operating entity and support contacts, publish final privacy and retention terms, review each host's equipment and property permissions, establish payment and settlement eligibility, and test booking conflicts, refunds and incident handling. These steps are tracked in [the launch plan](public/launch-plan.md).
+Before advertising or collecting money, finish the provider and business gates in the [operator runbook](docs/operations.md) and [public launch plan](public/launch-plan.md). Choose hosting that permits commercial use. Supply your actual operator identity/contact, activate and test Google/SMTP, approve real hosts, establish merchant/settlement eligibility, publish final commercial policies and run supervised acceptance sessions.
+
+Keep `COMMERCIAL_LAUNCH_APPROVED=false` until those checks pass. Configuration flags are release controls, not legal approval, electrical certification, merchant approval or proof of customer traction.

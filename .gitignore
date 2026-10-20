@@ -6,3 +6,5 @@ node_modules/
 *.tsbuildinfo
 supabase/.temp/
 supabase/.branches/
+.private-backups/
+.codex-finalizer/

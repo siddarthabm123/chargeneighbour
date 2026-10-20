@@ -1,10 +1,60 @@
-import 'server-only';
-export const privateJson=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'private, no-store'}});
-export async function useGoogleAllowance() {
- const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SECRET_KEY;
- if(!url||!key)return false;
- const headers:Record<string,string>={apikey:key,'Content-Type':'application/json'};
- if(key.startsWith('eyJ'))headers.Authorization=`Bearer ${key}`;
- const response=await fetch(new URL('/rest/v1/rpc/consume_search_allowance',url),{method:'POST',headers,body:'{}',cache:'no-store',signal:AbortSignal.timeout(12000)});
- return response.ok&&(await response.json())===true;
+import "server-only";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { HttpError, json } from "./http";
+import { allowance, protect } from "./rate-limit";
+import type { Station } from "./stations";
+export const privateJson = json;
+export async function useGoogleAllowance(request: Request, scope: string) {
+  await protect(request, `google-${scope}`, scope === "photo" ? 24 : 12, 600);
+  if (
+    !(await allowance(
+      `google:daily-total:${new Date().toISOString().slice(0, 10)}`,
+      100,
+      86400,
+    ))
+  )
+    throw new HttpError(
+      429,
+      "Today’s station-detail allowance has been reached. Continue in Google Maps.",
+    );
+}
+function photoSecret() {
+  const key = process.env.RATE_LIMIT_SECRET || process.env.SUPABASE_SECRET_KEY;
+  if (!key) throw Error("Photo protection unavailable");
+  return key;
+}
+export function signedPhotos(station: Station) {
+  const expires = String(Math.floor(Date.now() / 1000) + 1800);
+  return {
+    ...station,
+    photos: station.photos.map((p) => ({
+      ...p,
+      url: `/api/chargers/photo?name=${encodeURIComponent(p.name)}&expires=${expires}&signature=${createHmac(
+        "sha256",
+        photoSecret(),
+      )
+        .update(p.name + ":" + expires)
+        .digest("hex")}`,
+    })),
+  };
+}
+export function validPhotoAccess(
+  name: string,
+  expires: string,
+  signature: string,
+) {
+  const expiry = Number(expires);
+  if (
+    !Number.isInteger(expiry) ||
+    expiry < Math.floor(Date.now() / 1000) ||
+    expiry > Math.floor(Date.now() / 1000) + 1900 ||
+    !/^[a-f0-9]{64}$/.test(signature)
+  )
+    return false;
+  return timingSafeEqual(
+    Buffer.from(signature, "hex"),
+    createHmac("sha256", photoSecret())
+      .update(name + ":" + expires)
+      .digest(),
+  );
 }
