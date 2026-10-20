@@ -16,12 +16,15 @@ import {
   Clock3,
   ShieldCheck,
   ExternalLink,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   availableConnectors,
   connectorName,
   directionsUrl,
   distanceKm,
+  distanceLabel,
   freshAvailability,
   googleSearchUrl,
   matchesStation,
@@ -53,10 +56,17 @@ export default function LiveDiscovery() {
     detailRequest = useRef(0);
   const [synchronized, setSynchronized] = useState(false),
     [detailBusy, setDetailBusy] = useState(false);
+  const [address, setAddress] = useState(""),
+    [addressBusy, setAddressBusy] = useState(false),
+    [addressError, setAddressError] = useState(""),
+    [copied, setCopied] = useState(false),
+    [copyError, setCopyError] = useState(false);
+  const addressRequest = useRef(0),
+    addressController = useRef<AbortController | null>(null);
   useEffect(() => {
-    if (selected)
+    if (selected && window.matchMedia("(max-width: 760px)").matches)
       document
-        .getElementById("station-detail")
+        .getElementById("station-map")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selected]);
   useEffect(() => {
@@ -66,6 +76,8 @@ export default function LiveDiscovery() {
       requestNumber.current++;
       controller.current?.abort();
       detailRequest.current++;
+      addressRequest.current++;
+      addressController.current?.abort();
     };
   }, []);
   const pointText = position
@@ -78,12 +90,15 @@ export default function LiveDiscovery() {
         ? selected.location
           ? `${selected.location.latitude},${selected.location.longitude}`
           : `${selected.name}, ${selected.address}`
-        : `EV charging stations near ${area}`;
+        : `EV charging stations near ${area === "Your location" && position ? pointText : area}`;
   const mapUrl =
     mode === "route" && selected && position
       ? `https://maps.google.com/maps?hl=en&saddr=${encodeURIComponent(pointText)}&daddr=${encodeURIComponent(selected.location ? `${selected.location.latitude},${selected.location.longitude}` : selected.address)}&output=embed`
       : `https://maps.google.com/maps?hl=en&q=${encodeURIComponent(mapQuery)}&z=${mode === "you" || mode === "station" ? 16 : area === "India" ? 5 : 13}&output=embed`;
-  const mapsLink = googleSearchUrl(area);
+  const mapsLink = googleSearchUrl(
+    area === "Your location" && position ? pointText : area,
+  );
+  const openMapResults = stations.some((s) => s.source === "openstreetmap");
   const filtered = stations
     .filter(
       (s) =>
@@ -159,9 +174,69 @@ export default function LiveDiscovery() {
   }
   function search(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPosition(null);
+    setLocating(false);
     setLocationError("");
     void loadStations(query.trim());
+  }
+  async function lookupAddress(point: Position) {
+    const number = ++addressRequest.current;
+    addressController.current?.abort();
+    addressController.current = new AbortController();
+    setAddress("");
+    setAddressError("");
+    setCopied(false);
+    setCopyError(false);
+    setAddressBusy(true);
+    try {
+      const response = await fetch("/api/location", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          latitude: point.latitude,
+          longitude: point.longitude,
+        }),
+        signal: addressController.current.signal,
+      });
+      const data = await response.json();
+      if (number !== addressRequest.current) return;
+      if (!response.ok || !data.address)
+        throw Error(
+          data.message ||
+            "An address could not be found. Your location is still available on the map.",
+        );
+      setAddress(data.address);
+    } catch (error) {
+      if (number === addressRequest.current)
+        setAddressError(
+          error instanceof Error
+            ? error.message
+            : "Address lookup is unavailable. Please try refreshing your location.",
+        );
+    } finally {
+      if (number === addressRequest.current) setAddressBusy(false);
+    }
+  }
+  async function copyAddress() {
+    if (!address) return;
+    try {
+      await navigator.clipboard.writeText(`Near ${address}`);
+      setCopied(true);
+      setCopyError(false);
+    } catch {
+      setCopyError(true);
+      setCopied(false);
+    }
+  }
+  function showNearby() {
+    setView("list");
+    setMode("nearby");
+    if (!position) {
+      if (!locating) locate();
+    } else if (area !== "Your location")
+      void loadStations("Your location", position);
+    document
+      .getElementById("station-workspace")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function locate() {
     if (!navigator.geolocation) {
@@ -172,6 +247,8 @@ export default function LiveDiscovery() {
     }
     const number = ++requestNumber.current;
     setLocating(true);
+    controller.current?.abort();
+    setBusy(false);
     setLocationError("");
     navigator.geolocation.getCurrentPosition(
       (result) => {
@@ -185,7 +262,8 @@ export default function LiveDiscovery() {
         setPosition(p);
         setLocating(false);
         setQuery("");
-        void loadStations(`${p.latitude},${p.longitude}`, p);
+        void lookupAddress(p);
+        void loadStations("Your location", p);
       },
       (error) => {
         if (number !== requestNumber.current) return;
@@ -205,6 +283,13 @@ export default function LiveDiscovery() {
     requestNumber.current++;
     controller.current?.abort();
     detailRequest.current++;
+    addressRequest.current++;
+    addressController.current?.abort();
+    setAddress("");
+    setAddressBusy(false);
+    setAddressError("");
+    setCopied(false);
+    setCopyError(false);
     setPosition(null);
     setLocating(false);
     setBusy(false);
@@ -217,8 +302,11 @@ export default function LiveDiscovery() {
   async function focusStation(s: Station) {
     setSelected(s);
     setMode("station");
-    setView("map");
     const number = ++detailRequest.current;
+    if (s.source === "openstreetmap") {
+      setDetailBusy(false);
+      return;
+    }
     setDetailBusy(true);
     try {
       const response = await fetch(
@@ -243,9 +331,7 @@ export default function LiveDiscovery() {
     }
   }
   const distance = (s: Station) =>
-    position && s.location
-      ? `${distanceKm(position, s.location).toFixed(1)} km away · straight line`
-      : null;
+    position && s.location ? distanceLabel(position, s.location) : null;
   return (
     <section className="live-discovery wrap section" id="explore">
       <div className="section-heading">
@@ -312,9 +398,9 @@ export default function LiveDiscovery() {
               : "Use my location"}
         </button>
         <p>
-          Your choice: your browser asks permission. Your location is sent to
-          this site and Google for nearby search and maps, and is not saved in
-          our database.
+          Your choice: your browser asks permission. This site, Google Maps and
+          Photon (OpenStreetMap) use your location for nearby stations, maps and
+          a readable address. We do not save your GPS location in our database.
         </p>
       </div>
       {locationError && (
@@ -326,12 +412,17 @@ export default function LiveDiscovery() {
         <div className="your-position">
           <span className="position-dot" />
           <div>
-            <b>You are here · location captured</b>
-            <p>
-              {position.latitude.toFixed(5)}, {position.longitude.toFixed(5)} ·
-              accuracy about {Math.max(1, Math.round(position.accuracy))} m
+            <b>You are here · approximate address</b>
+            <p aria-live="polite">
+              {addressBusy
+                ? "Finding your street and neighbourhood…"
+                : address
+                  ? `Near ${address}`
+                  : addressError ||
+                    "Location captured. Address not available yet."}
             </p>
             <small>
+              Accuracy about {Math.max(1, Math.round(position.accuracy))} m ·{" "}
               Captured{" "}
               {new Date(position.capturedAt).toLocaleTimeString("en-IN", {
                 hour: "2-digit",
@@ -339,7 +430,42 @@ export default function LiveDiscovery() {
               })}{" "}
               · Refresh as you move. This is a location snapshot.
             </small>
+            {address && (
+              <small className="address-attribution">
+                Address:{" "}
+                <a
+                  href="https://www.openstreetmap.org/copyright"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  © OpenStreetMap contributors
+                </a>{" "}
+                via Photon. Confirm the entrance before travelling.
+              </small>
+            )}
+            {copyError && (
+              <label className="manual-address-copy">
+                Clipboard access was blocked. Select this address and copy it:
+                <input
+                  readOnly
+                  value={`Near ${address}`}
+                  onFocus={(e) => e.currentTarget.select()}
+                  aria-label="Address to copy"
+                />
+              </label>
+            )}
           </div>
+          {address && (
+            <button
+              className="button outline copy-address"
+              onClick={() => void copyAddress()}
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              <span role="status">
+                {copied ? "Address copied" : "Copy address"}
+              </span>
+            </button>
+          )}
           <button
             className="inline-link"
             onClick={() => {
@@ -370,11 +496,11 @@ export default function LiveDiscovery() {
           </button>
           <button
             className={view === "list" ? "active" : ""}
-            onClick={() => setView("list")}
+            onClick={showNearby}
             aria-pressed={view === "list"}
           >
             <List size={17} />
-            Station list
+            Nearby station list
           </button>
         </div>
         <a href={mapsLink} target="_blank" rel="noreferrer">
@@ -445,12 +571,20 @@ export default function LiveDiscovery() {
         </div>
       )}
       <div
-        className={`station-workspace ${view === "list" ? "list-only" : ""}`}
+        className={`station-workspace ${view === "list" ? "compact-list" : ""}`}
+        id="station-workspace"
       >
-        <div className="station-list-panel">
+        <aside
+          className="station-list-panel"
+          aria-label="Nearby charging stations"
+        >
           <div className="station-list-heading">
             <span className="google-maps-attribution" translate="no">
-              Google Maps
+              {openMapResults
+                ? "OpenStreetMap · via Photon"
+                : stations.length
+                  ? "Google Maps"
+                  : "Charging stations"}
             </span>
             <h3>
               {busy
@@ -459,7 +593,15 @@ export default function LiveDiscovery() {
                   ? `${filtered.length} matching stations`
                   : "Station guide"}
             </h3>
-            {position && <span>Within 25 km · nearest first</span>}
+            {position ? (
+              <span>
+                {area === "Your location"
+                  ? "Within 25 km · nearest first"
+                  : "Nearest first from your GPS location"}
+              </span>
+            ) : (
+              <span>Use my location to see distances from you.</span>
+            )}
           </div>
           {busy ? (
             <div className="station-empty" role="status">
@@ -493,7 +635,7 @@ export default function LiveDiscovery() {
                 {distance(s) && (
                   <div className="distance-label">
                     <Navigation size={14} />
-                    {distance(s)}
+                    {distance(s)} <small>from you</small>
                   </div>
                 )}
                 <div className="connector-tags">
@@ -542,7 +684,7 @@ export default function LiveDiscovery() {
               <p>
                 {stations.length
                   ? "Try another connector, power or availability filter."
-                  : "Search a location or use your position. Tap a station on the map to explore its Google place preview."}
+                  : "Search a city or use your location to load nearby station names and distances."}
               </p>
               <a href={mapsLink} target="_blank" rel="noreferrer">
                 Stations, photos & reviews on Google <ArrowUpRight size={16} />
@@ -550,13 +692,14 @@ export default function LiveDiscovery() {
             </div>
           )}
           <p className="station-list-footnote">
-            Up to 20 results. Distances are straight-line estimates. “Open”
-            describes hours, not a free connector. Availability information may
-            not be supplied for every station.
+            Up to 20 mapped results. Distances from your GPS snapshot are
+            straight-line estimates, not driving distances. “Open” describes
+            hours, not a free connector. Availability information may not be
+            supplied for every station.
           </p>
-        </div>
+        </aside>
         <div className="map-detail-panel">
-          <div className="real-map-card">
+          <div className="real-map-card" id="station-map">
             <div className="map-title">
               <div>
                 <span className="position-dot" />
@@ -575,10 +718,7 @@ export default function LiveDiscovery() {
               </span>
             </div>
             <div className="map-mode-controls">
-              <button
-                aria-pressed={mode === "nearby"}
-                onClick={() => setMode("nearby")}
-              >
+              <button aria-pressed={mode === "nearby"} onClick={showNearby}>
                 Nearby stations
               </button>
               {position && (
@@ -676,7 +816,9 @@ export default function LiveDiscovery() {
                   rel="noreferrer"
                 >
                   <Camera size={17} />
-                  Photos on Google
+                  {selected.source === "openstreetmap"
+                    ? "Find photos on Google Maps"
+                    : "Photos on Google"}
                 </a>
               </div>
               <div className="detail-specs">
@@ -738,8 +880,9 @@ export default function LiveDiscovery() {
                 </div>
               ) : (
                 <p>
-                  Google has not supplied connector or power specifications for
-                  this station. Confirm compatibility with the operator.
+                  The map provider has not supplied connector or power
+                  specifications for this station. Confirm compatibility with
+                  the operator.
                 </p>
               )}
               <p className="detail-note">
@@ -801,7 +944,10 @@ export default function LiveDiscovery() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Read reviews on Google <ArrowUpRight size={16} />
+                  {selected.source === "openstreetmap"
+                    ? "Explore on Google Maps"
+                    : "Read reviews on Google"}{" "}
+                  <ArrowUpRight size={16} />
                 </a>
               </div>
               {!!selected.hours?.length && (
@@ -829,8 +975,12 @@ export default function LiveDiscovery() {
                 </a>
               ))}
               <p className="detail-note">
-                Station details from Google Maps. Public listings are not
-                confirmed ChargeNeighbour partners or reservations.
+                Station details from{" "}
+                {selected.source === "openstreetmap"
+                  ? "OpenStreetMap via Photon"
+                  : "Google Maps"}
+                . Public listings are not confirmed ChargeNeighbour partners or
+                reservations.
               </p>
             </section>
           ) : (
@@ -849,7 +999,7 @@ export default function LiveDiscovery() {
         </div>
       </div>
       <p className="google-policy">
-        Google map content and station cards are provided under the{" "}
+        Google map content and Google Places details are provided under the{" "}
         <a
           href="https://www.google.com/intl/en_us/help/terms_maps/"
           target="_blank"
@@ -866,7 +1016,16 @@ export default function LiveDiscovery() {
           Google Privacy Policy
         </a>
         . Station information is not a guarantee of access, compatibility, price
-        or charger availability.
+        or charger availability. Fallback station names and readable addresses
+        use{" "}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noreferrer"
+        >
+          © OpenStreetMap contributors
+        </a>{" "}
+        via Photon, with incomplete community coverage.
       </p>
     </section>
   );

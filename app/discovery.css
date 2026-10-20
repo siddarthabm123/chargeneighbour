@@ -323,8 +323,31 @@
   overflow-wrap: anywhere;
 }
 .your-position small {
-  font-size: 13px;
+  font-size: 14px;
   color: #4c6f7d;
+}
+.address-attribution {
+  display: block;
+  margin-top: 5px;
+}
+.address-attribution a {
+  text-decoration: underline;
+}
+.your-position .copy-address {
+  font-size: 14px;
+  white-space: nowrap;
+}
+.manual-address-copy {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+}
+.manual-address-copy input {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  font: inherit;
 }
 .your-position .inline-link {
   font-size: 14px;
@@ -430,9 +453,14 @@
   border: 1px solid var(--line);
   border-radius: 9px;
   background: #fff;
-  overflow: hidden;
+  overflow: auto;
+  max-height: 650px;
+  scrollbar-gutter: stable;
 }
 .station-list-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   padding: 20px;
   border-bottom: 1px solid var(--line);
   background: #f1f4e9;
@@ -866,20 +894,29 @@
   font-size: 14px;
   line-height: 1.9;
 }
-.station-workspace.list-only {
-  display: block;
-}
-.list-only .station-list-panel {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.list-only .station-list-heading,
-.list-only .station-list-footnote,
-.list-only .station-empty {
-  grid-column: 1/-1;
-}
-.list-only .map-detail-panel {
+.compact-list .station-preview-top,
+.compact-list .connector-tags,
+.compact-list .station-card-footer {
   display: none;
+}
+.compact-list .station-preview {
+  padding: 18px 20px;
+}
+.compact-list .station-name {
+  font-size: 18px;
+  line-height: 1.4;
+}
+.compact-list .distance-label {
+  font-size: 16px;
+  font-weight: 650;
+}
+.compact-list .distance-label small {
+  font-size: 13px;
+  font-weight: 400;
+}
+#station-workspace,
+#station-map {
+  scroll-margin-top: 100px;
 }
 @media (max-width: 1000px) {
   .station-workspace {
@@ -902,9 +939,6 @@
   .detail-specs {
     grid-template-columns: 1fr;
   }
-  .list-only .station-list-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 @media (max-width: 760px) {
   .location-controls {
@@ -924,8 +958,14 @@
   .map-detail-panel {
     width: 100%;
   }
-  .station-workspace.list-only {
-    display: block;
+  .station-workspace.compact-list {
+    flex-direction: column;
+  }
+  .station-list-panel {
+    max-height: 420px;
+  }
+  .your-position .copy-address {
+    margin-left: 24px;
   }
   .real-map-card iframe {
     height: 390px;
@@ -1007,9 +1047,6 @@
   .station-photo-grid img,
   .photo-unavailable {
     height: 150px;
-  }
-  .station-workspace.list-only .station-list-panel {
-    display: block;
   }
   .station-detail {
     padding: 22px;

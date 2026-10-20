@@ -4,15 +4,24 @@ import {
   signedPhotos,
 } from "../../lib/google-places-server";
 import { validPoint, stationFromGoogle, type Point } from "../../lib/stations";
+import { nearbyOpenStations, openSearchPoint } from "../../lib/photon-server";
 async function search(request: Request, query: string, point?: Point) {
-  if (!process.env.GOOGLE_PLACES_API_KEY)
-    return json(
-      {
+  if (!process.env.GOOGLE_PLACES_API_KEY) {
+    const center = point || (await openSearchPoint(request, query));
+    if (!center || !validPoint(center))
+      return json({
+        stations: [],
         message:
-          "Detailed station cards are not available here yet. Explore real stations, photos and directions in the Google map below.",
-      },
-      503,
-    );
+          "No mapped location was found. Try a nearby city or use your location.",
+      });
+    return json({
+      stations: await nearbyOpenStations(request, center),
+      source: "openstreetmap",
+      message:
+        "Nearby stations from OpenStreetMap. Coverage may be incomplete; opening hours and live connector availability are unconfirmed. Open Google Maps for photos and operator details.",
+      fetchedAt: new Date().toISOString(),
+    });
+  }
   await useGoogleAllowance(request, "search");
   const fieldMask =
     "places.id,places.displayName,places.formattedAddress,places.googleMapsUri,places.location,places.businessStatus,places.attributions,places.evChargeOptions";

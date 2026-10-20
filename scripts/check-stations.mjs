@@ -8,6 +8,9 @@ import {
   matchesStation,
   stationFromGoogle,
   validPoint,
+  readableAddress,
+  stationFromPhoton,
+  distanceLabel,
 } from "../app/lib/stations.ts";
 
 const now = Date.now(),
@@ -110,8 +113,70 @@ const link = new URL(directionsUrl(station, point));
 assert.equal(link.searchParams.get("origin"), "12.97,77.59");
 assert.equal(link.searchParams.get("destination_place_id"), "test");
 assert.equal(new URL(directionsUrl(station)).searchParams.has("origin"), false);
+const openStation = stationFromPhoton({
+  geometry: { coordinates: [77.59, 12.97] },
+  properties: {
+    osm_type: "N",
+    osm_id: 123,
+    osm_key: "amenity",
+    osm_value: "charging_station",
+    name: "Synthetic mapped charger",
+    street: "Test Road",
+    district: "Test Area",
+    city: "Test City",
+    state: "Test State",
+    postcode: "123456",
+    country: "India",
+  },
+});
+assert.ok(openStation);
+assert.equal(openStation.name, "Synthetic mapped charger");
+assert.equal(
+  openStation.address,
+  "Test Road, Test Area, Test City, Test State, 123456, India",
+);
+assert.equal(openStation.source, "openstreetmap");
+assert.equal(availableConnectors(openStation), 0);
+const openDirections = new URL(directionsUrl(openStation, point));
+assert.equal(openDirections.searchParams.get("destination"), "12.97,77.59");
+assert.equal(openDirections.searchParams.has("destination_place_id"), false);
+assert.equal(
+  stationFromPhoton({ properties: { osm_key: "amenity", osm_value: "cafe" } }),
+  null,
+);
+assert.equal(
+  stationFromPhoton({
+    geometry: { coordinates: [999, 999] },
+    properties: {
+      osm_key: "amenity",
+      osm_value: "charging_station",
+      osm_type: "N",
+      osm_id: 1,
+    },
+  }),
+  null,
+);
+assert.equal(
+  readableAddress({
+    street: "Test Road",
+    locality: "Test Area",
+    district: "test area",
+    city: "Test City",
+    name: "A nearby business",
+  }),
+  "Test Road, test area, Test City",
+);
+assert.equal(readableAddress({ name: "A nearby business" }), "");
+assert.equal(
+  distanceLabel(point, { latitude: 12.971, longitude: 77.59 }),
+  "111 m away",
+);
+assert.equal(
+  distanceLabel(point, { latitude: 12.98, longitude: 77.59 }),
+  "1.1 km away",
+);
 console.log(
-  "PASS: location validation, distances, connector compatibility, fresh versus stale availability, closed stations, photo attribution and driving directions.",
+  "PASS: location validation, readable addresses, real-source station parsing, metre/km distances, connector compatibility, fresh availability, photo attribution and provider-correct directions.",
 );
 
 if (process.env.CHECK_BASE_URL) {

@@ -18,7 +18,11 @@ export default function Status() {
           <dd>Available through Google Maps</dd>
         </div>
         <div>
-          <dt>Detailed station cards</dt>
+          <dt>Nearby station list & readable address</dt>
+          <dd>OpenStreetMap lookup via Photon; optional GPS distances</dd>
+        </div>
+        <div>
+          <dt>Google station specifications & photos</dt>
           <dd>
             {process.env.GOOGLE_PLACES_API_KEY
               ? "Configured — search to check current results"

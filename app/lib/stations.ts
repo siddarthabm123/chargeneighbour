@@ -8,6 +8,7 @@ export type Connector = {
   availabilityLastUpdateTime?: string;
 };
 export type Station = {
+  source?: "google" | "openstreetmap";
   id: string;
   name: string;
   address: string;
@@ -114,12 +115,100 @@ export const googleSearchUrl = (query: string) =>
 export function directionsUrl(station: Station, origin?: Point | null) {
   const url = new URL("https://www.google.com/maps/dir/");
   url.searchParams.set("api", "1");
-  url.searchParams.set("destination", station.address || station.name);
-  url.searchParams.set("destination_place_id", station.id);
+  url.searchParams.set(
+    "destination",
+    station.source === "openstreetmap" && station.location
+      ? `${station.location.latitude},${station.location.longitude}`
+      : station.address || station.name,
+  );
+  if (station.source !== "openstreetmap")
+    url.searchParams.set("destination_place_id", station.id);
   url.searchParams.set("travelmode", "driving");
   if (origin)
     url.searchParams.set("origin", `${origin.latitude},${origin.longitude}`);
   return url.href;
+}
+
+export type PhotonFeature = {
+  geometry?: { coordinates?: number[] };
+  properties?: Record<string, unknown>;
+};
+export function readableAddress(properties: Record<string, unknown>) {
+  const text = (key: string) =>
+    typeof properties[key] === "string" ? properties[key].trim() : "";
+  const street = [text("housenumber"), text("street")]
+    .filter(Boolean)
+    .join(" ");
+  const parts = [
+    street,
+    text("locality"),
+    text("district"),
+    text("city"),
+    text("state"),
+    text("postcode"),
+    text("country"),
+  ].filter(Boolean);
+  return [
+    ...new Map(
+      parts.map((part) => [part.toLocaleLowerCase("en"), part]),
+    ).values(),
+  ].join(", ");
+}
+export function stationFromPhoton(feature: PhotonFeature): Station | null {
+  const p = feature.properties,
+    coordinates = feature.geometry?.coordinates;
+  if (
+    !p ||
+    !coordinates ||
+    p.osm_key !== "amenity" ||
+    p.osm_value !== "charging_station"
+  )
+    return null;
+  const location = { latitude: coordinates[1], longitude: coordinates[0] };
+  const type = (
+    { N: "node", W: "way", R: "relation" } as Record<string, string>
+  )[String(p.osm_type)];
+  if (
+    !validPoint(location) ||
+    !type ||
+    !Number.isSafeInteger(p.osm_id) ||
+    Number(p.osm_id) <= 0
+  )
+    return null;
+  const name =
+    typeof p.name === "string" && p.name.trim()
+      ? p.name.trim()
+      : "Unnamed EV charging station";
+  const url = new URL("https://www.google.com/maps/search/");
+  url.searchParams.set("api", "1");
+  url.searchParams.set(
+    "query",
+    `${name} near ${location.latitude},${location.longitude}`,
+  );
+  return {
+    source: "openstreetmap",
+    id: `osm:${type}:${p.osm_id}`,
+    name,
+    address:
+      readableAddress(p) ||
+      "Street address not mapped — open the location on the map",
+    location,
+    url: url.href,
+    connectors: [],
+    photos: [],
+    attributions: [
+      {
+        provider: "© OpenStreetMap contributors",
+        uri: "https://www.openstreetmap.org/copyright",
+      },
+    ],
+  };
+}
+export function distanceLabel(origin: Point, destination: Point) {
+  const km = distanceKm(origin, destination);
+  return km < 1
+    ? `${Math.max(1, Math.round(km * 1000))} m away`
+    : `${km.toFixed(1)} km away`;
 }
 
 export function safeWebLink(value: unknown, googleOnly = false) {

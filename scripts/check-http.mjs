@@ -79,6 +79,30 @@ try {
     body: "{}",
   });
   assert.equal(other.status, 403);
+  const locationPost = (body, origin = base) =>
+    fetch(base + "/api/location", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", origin },
+      body: JSON.stringify(body),
+    });
+  assert.equal(
+    (await locationPost({}, "https://untrusted.invalid")).status,
+    403,
+  );
+  assert.equal(
+    (await locationPost({ latitude: "12", longitude: 77 })).status,
+    400,
+  );
+  assert.equal(
+    (
+      await locationPost({
+        latitude: 12,
+        longitude: 77,
+        padding: "x".repeat(600),
+      })
+    ).status,
+    413,
+  );
   const large = await fetch(base + "/api/chargers", {
     method: "POST",
     headers: { "Content-Type": "application/json", origin: base },

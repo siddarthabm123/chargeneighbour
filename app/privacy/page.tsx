@@ -36,13 +36,34 @@ export default function Privacy() {
         status. We use these to manage applications, respond to requests and
         operate the pilot. We do not sell application data.
       </p>
-      <h2>Location and Google</h2>
+      <h2>Location and map providers</h2>
       <p>
         Location is optional and requested only after you choose Use my
-        location. Your coordinates are sent to this website and Google for
-        nearby search and maps. They remain in page memory and are not stored in
-        our application database. Clear my location or reload to clear them from
-        the page. Google may process your data under its own policy.
+        location. Your coordinates are sent to this website, Google Maps and
+        Photon (operated by komoot, using OpenStreetMap data) for nearby search,
+        maps and an approximate readable address. They remain in page memory and
+        are not stored in our application database. Clear my location or reload
+        to clear them from the page. Providers may process requests under their
+        own policies. Your address is copied to your device clipboard only when
+        you choose Copy address; anyone with access to that clipboard can read
+        it.
+      </p>
+      <p>
+        OpenStreetMap station and address data is community maintained, may be
+        incomplete, and does not establish current opening or availability.
+        <a href="https://www.openstreetmap.org/copyright">
+          {" "}
+          OpenStreetMap attribution and licence
+        </a>
+        ,
+        <a href="https://github.com/komoot/photon">
+          {" "}
+          Photon service information
+        </a>{" "}
+        and
+        <a href="https://www.komoot.com/privacy"> komoot privacy policy</a>. We
+        request an approximate mapped address; GPS cannot verify a building
+        entrance. No address is automatically copied or saved by this website.
       </p>
       <p>
         Google Maps and Places content is governed by{" "}

@@ -33,8 +33,20 @@ const destination = new URL(callback.headers.get("location"));
 assert.equal(destination.pathname, "/auth/login");
 assert.equal(destination.searchParams.get("next"), "/?action=activity");
 const station = await fetch(base + "/api/chargers?q=Bengaluru");
-assert.equal(station.status, 503);
+assert.ok([200, 429, 503].includes(station.status));
+if (station.ok) {
+  const data = await station.json();
+  assert.ok(Array.isArray(data.stations));
+  assert.ok(
+    data.stations.every(
+      (s) =>
+        s.name &&
+        s.location &&
+        ["openstreetmap", "google", undefined].includes(s.source),
+    ),
+  );
+} else await station.body?.cancel();
 assert.match(station.headers.get("cache-control"), /no-store/);
 console.log(
-  "PASS: public map and clear homepage, forged identity rejection, protected writes, safe auth redirects and honest Google activation status.",
+  "PASS: public map and clear homepage, forged identity rejection, protected writes, safe auth redirects and source-labelled station discovery with outage/quota fallback.",
 );
