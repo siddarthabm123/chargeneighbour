@@ -30,6 +30,7 @@ export type HostCharger = {
   status: string;
   verified_at?: string;
   owner_id?: string;
+  review_checks?: string[];
 };
 export const rupees = (paise: number) =>
   new Intl.NumberFormat("en-IN", {

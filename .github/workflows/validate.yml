@@ -14,6 +14,7 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: node scripts/check-stations.mjs
+      - run: node scripts/check-charger-choice.mjs
       - run: node scripts/check-safety.mjs
       - run: node scripts/check-evidence-routes.mjs
       - run: node scripts/check-database.mjs

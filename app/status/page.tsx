@@ -14,6 +14,23 @@ export default function Status() {
       </p>
       <dl className="status-list">
         <div>
+          <dt>Vehicle matching and charger comparison</dt>
+          <dd>
+            Per-tab connector profile, unknown-fit labels, up to three options
+            and same-energy estimates when a rate is supplied.{" "}
+            <a href="/features">See all five problems and included solutions</a>
+            .
+          </dd>
+        </div>
+        <div>
+          <dt>Availability and host trust</dt>
+          <dd>
+            Timestamped supplied reports, backup choices, host review scope and
+            gated owner confirmation. No connected charger telemetry or safety
+            certification is claimed.
+          </dd>
+        </div>
+        <div>
           <dt>Public map</dt>
           <dd>Interactive station map with in-site driving-route preview</dd>
         </div>

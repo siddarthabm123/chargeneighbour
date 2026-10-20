@@ -37,6 +37,7 @@ try {
     "/support",
     "/hosts",
     "/pilot",
+    "/features",
     "/status",
     "/robots.txt",
     "/sitemap.xml",
@@ -70,10 +71,42 @@ try {
       401,
       path,
     );
+  for (const method of ["POST", "PATCH"]) {
+    const unauthenticated = await fetch(base + "/api/reservations", {
+      method,
+      headers: {
+        "content-type": "application/json",
+        origin: base,
+        "oai-authenticated-user-id": "forged-owner",
+      },
+      body: JSON.stringify({
+        action: "confirm",
+        id: "11111111-1111-4111-8111-111111111111",
+      }),
+    });
+    assert.equal(
+      unauthenticated.status,
+      401,
+      `Forged ${method} reservation ownership`,
+    );
+  }
+  const features = await (await fetch(base + "/features")).text();
+  assert.ok(
+    features.includes("Already included:") &&
+      features.includes("Added to this version:"),
+  );
   const demoHome = await (await fetch(base)).text();
   assert.ok(
     demoHome.indexOf('id="explore"') < demoHome.indexOf('class="hero wrap"'),
     "Discovery precedes the marketing hero",
+  );
+  assert.ok(
+    demoHome.includes("My EV connections"),
+    "Vehicle chooser is visible without sign-in",
+  );
+  assert.ok(
+    !demoHome.includes("output=embed"),
+    "No independent broad-search map iframe",
   );
   assert.equal((await fetch(base + "/api/hosts/photo?id=invalid")).status, 400);
   assert.ok(

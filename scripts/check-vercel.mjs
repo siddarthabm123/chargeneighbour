@@ -5,7 +5,11 @@ assert.equal(home.status, 200);
 const html = await home.text();
 assert.ok(html.includes("Share your"));
 assert.ok(html.includes("HOME CHARGER SHARING"));
-assert.ok(html.includes("maps.google.com/maps?"));
+assert.ok(html.includes("station-workspace"));
+assert.ok(
+  !html.includes("output=embed"),
+  "No independent unfiltered map replaces synchronized results",
+);
 const forged = {
   "oai-authenticated-user-id": "forged-user",
   "oai-authenticated-user-email": "forged@example.invalid",

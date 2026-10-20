@@ -179,6 +179,7 @@ grant usage on schema auth to anon,authenticated,service_role;`);
       metering: true,
       access: true,
       support: true,
+      pricing: true,
       evidence: "Isolated test fixture, not an actual inspection",
     },
   };
@@ -249,6 +250,18 @@ grant usage on schema auth to anon,authenticated,service_role;`);
   await asUser(owner);
   assert.equal((await db.query("select * from reservations")).rows.length, 1);
   await asServer();
+  await db.query("update host_chargers set price_paise_kwh=1900 where id=$1", [
+    charger,
+  ]);
+  assert.equal(
+    (
+      await one("select rate_paise_kwh from reservations where id=$1", [
+        booking.id,
+      ])
+    ).rate_paise_kwh,
+    1600,
+    "Host rate changes must not alter an agreed session rate",
+  );
   await db.query(
     "select operate_reservation($1,'fixture-operator','confirm',null,'fixture approval')",
     [booking.id],
@@ -320,6 +333,43 @@ grant usage on schema auth to anon,authenticated,service_role;`);
     (await one("select settlement_status from session_ledger"))
       .settlement_status,
     "refunded",
+  );
+  const expiring = await reserve(
+    driver,
+    "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+  );
+  await db.query(
+    "update reservations set hold_until=now()-interval '1 minute' where id=$1",
+    [expiring.id],
+  );
+  await assert.rejects(
+    db.query(
+      "select operate_reservation($1,$2,'confirm',null,'expired hold fixture')",
+      [expiring.id, `supabase:${owner}`],
+    ),
+    /Invalid session transition/,
+  );
+  const replacement = await reserve(
+    stranger,
+    "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  );
+  assert.equal(
+    (await one("select status from reservations where id=$1", [expiring.id]))
+      .status,
+    "expired",
+  );
+  await db.query(
+    "select operate_reservation($1,$2,'confirm',null,'owner fixture confirmation')",
+    [replacement.id, `supabase:${owner}`],
+  );
+  await db.query(
+    "select operate_reservation($1,$2,'cancel',null,'owner fixture decline')",
+    [replacement.id, `supabase:${owner}`],
+  );
+  assert.equal(
+    (await one("select status from reservations where id=$1", [replacement.id]))
+      .status,
+    "cancelled",
   );
   await asUser(owner);
   await db.query(

@@ -631,6 +631,7 @@ export default function Marketplace({ user }: { user: User }) {
             <a href="/privacy">Privacy</a>
             <a href="/terms">Pilot terms</a>
             <a href="/support">Support</a>
+            <a href="/features">Problems & solutions</a>
             <a href="/status">Service status</a>
             <button
               onClick={() =>

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Comparison, demoChoices } from "./charger-tools";
 import { ChevronLeft, ChevronRight, PlugZap, MapPin } from "lucide-react";
 
 const views = [
@@ -91,6 +92,7 @@ export default function StationDemo() {
           </p>
         </article>
       </section>
+      <Comparison items={demoChoices} demo />
       <p className="demo-disclosure">
         This sample cannot be booked and has no map pin. Search the live map for
         real stations and road routes. Real Google photos and reviews can be

@@ -109,6 +109,15 @@ export default function Privacy() {
       </p>
       <h2>Cookies and campaign counts</h2>
       <p>
+        Optional vehicle connection preferences are stored in this tab’s session
+        storage, without a vehicle identifier. Clear them in My EV connections.
+        A host reservation request sends the selected connections to check fit;
+        the preference list is not stored in the reservation record. Public host
+        schedules show held/booked time windows without driver identity or
+        reservation IDs. Private account session updates refresh while the page
+        is visible; they are not public activity notifications.
+      </p>
+      <p>
         Authentication uses essential secure session cookies. Optional campaign
         measurement is off until you choose Allow; it stores a campaign label in
         session storage and sends aggregate daily counts, without email, GPS or

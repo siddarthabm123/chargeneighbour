@@ -163,6 +163,7 @@ export async function POST(request: Request) {
           "metering",
           "access",
           "support",
+          "pricing",
         ].every((k) => checks[k] === true)
       )
         throw new HttpError(
@@ -212,6 +213,7 @@ export async function POST(request: Request) {
                 "metering",
                 "access",
                 "support",
+                "pricing",
               ].map((k) => [k, true]),
             ),
             evidence,

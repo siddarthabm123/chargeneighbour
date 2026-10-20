@@ -28,6 +28,7 @@ export default function LegalShell({
       <footer className="document-footer">
         <Link href="/">Back to ChargeNeighbour</Link> ·{" "}
         <Link href="/support">Contact & data requests</Link> ·{" "}
+        <Link href="/features">Features & safeguards</Link> ·{" "}
         <Link href="/status">Service status</Link>
       </footer>
     </>

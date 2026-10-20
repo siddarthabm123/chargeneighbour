@@ -35,9 +35,19 @@ import {
 type Position = Point & { accuracy: number; capturedAt: string };
 import StationMap from "./station-map";
 import StationDemo from "./station-demo";
+import { Comparison, VehiclePicker, useVehicle } from "./charger-tools";
+import {
+  availabilityLabel,
+  compatibility,
+  vehicleConnectors,
+  type Choice,
+} from "./lib/charger-choice";
 import { roadLabel, type RoadMetric, type RoadRoute } from "./lib/road-route";
 type MapMode = "nearby" | "you" | "station" | "route";
 export default function LiveDiscovery() {
+  const [vehicle, setVehicle] = useVehicle();
+  const [compareIds, setCompareIds] = useState<string[]>([]),
+    [choiceError, setChoiceError] = useState("");
   const [query, setQuery] = useState(""),
     [area, setArea] = useState("India"),
     [stations, setStations] = useState<Station[]>([]);
@@ -113,29 +123,26 @@ export default function LiveDiscovery() {
   const pointText = position
     ? `${position.latitude},${position.longitude}`
     : "";
-  const mapQuery =
-    mode === "you" && position
-      ? pointText
-      : mode === "station" && selected
-        ? selected.location
-          ? `${selected.location.latitude},${selected.location.longitude}`
-          : `${selected.name}, ${selected.address}`
-        : `EV charging stations near ${area === "Your location" && position ? pointText : area}`;
-  const mapUrl =
-    mode === "route" && selected && position
-      ? `https://maps.google.com/maps?hl=en&saddr=${encodeURIComponent(pointText)}&daddr=${encodeURIComponent(selected.location ? `${selected.location.latitude},${selected.location.longitude}` : selected.address)}&output=embed`
-      : `https://maps.google.com/maps?hl=en&q=${encodeURIComponent(mapQuery)}&z=${mode === "you" || mode === "station" ? 16 : area === "India" ? 5 : 13}&output=embed`;
   const mapsLink = googleSearchUrl(
     area === "Your location" && position ? pointText : area,
   );
   const openMapResults = stations.some((s) => s.source === "openstreetmap");
+  const availabilityCount = (s: Station) =>
+    availableConnectors(
+      { ...s, connectors: vehicleConnectors(s, vehicle) },
+      connector,
+      power,
+      now,
+    );
   const filtered = stations
     .filter(
       (s) =>
         (includeSwap || stationCategory(s) !== "swap") &&
+        compatibility(s, vehicle) !== "incompatible" &&
+        (includeUnknown || compatibility(s, vehicle) !== "unknown") &&
         (matchesStation(s, connector, power) ||
           (includeUnknown && unknownSpecs(s, connector, power))) &&
-        (!onlyAvailable || availableConnectors(s, connector, power, now) > 0),
+        (!onlyAvailable || availabilityCount(s) > 0),
     )
     .sort((a, b) =>
       position
@@ -145,10 +152,36 @@ export default function LiveDiscovery() {
             (b.location ? distanceKm(position, b.location) : Infinity)
         : 0,
     );
+  const resultKey = filtered.map((s) => s.id).join("~");
+  useEffect(() => {
+    const visible = new Set(filtered.map((s) => s.id));
+    setCompareIds((ids) =>
+      ids.every((id) => visible.has(id))
+        ? ids
+        : ids.filter((id) => visible.has(id)),
+    );
+    if (selected && !visible.has(selected.id)) {
+      detailRequest.current++;
+      roadRequest.current++;
+      roadController.current?.abort();
+      setSelected(null);
+      setRoadRoute(null);
+      setRouteBusy(false);
+      setDetailBusy(false);
+      setPhotosOpen(false);
+      setMode("nearby");
+    }
+  }, [resultKey]);
+  function toggleCompare(id: string) {
+    setChoiceError("");
+    if (compareIds.includes(id))
+      setCompareIds(compareIds.filter((x) => x !== id));
+    else if (compareIds.length < 3) setCompareIds([...compareIds, id]);
+    else
+      setChoiceError("Compare up to three places. Remove one to add another.");
+  }
   const nearest = position
-    ? filtered.find(
-        (s) => s.location && availableConnectors(s, connector, power, now) > 0,
-      )
+    ? filtered.find((s) => s.location && availabilityCount(s) > 0)
     : undefined;
   const unknownCount = filtered.filter((s) =>
     unknownSpecs(s, connector, power),
@@ -692,6 +725,12 @@ export default function LiveDiscovery() {
         </div>
         <span>Explore stations and driving routes here</span>
       </div>
+      <VehiclePicker vehicle={vehicle} onChange={setVehicle} />
+      {choiceError && (
+        <p role="status" className="location-error">
+          {choiceError}
+        </p>
+      )}
       <details className="station-filter-panel">
         <summary>
           Filters{connector || power || onlyAvailable ? " · active" : ""}
@@ -749,7 +788,7 @@ export default function LiveDiscovery() {
           <p>
             {synchronized
               ? "Map markers and station cards show the same filtered results."
-              : "Filters apply to station cards. The fallback Google map has its own results."}
+              : "The map is loading or unavailable. The list keeps the selected filters."}
           </p>
         </div>
       </details>
@@ -794,8 +833,7 @@ export default function LiveDiscovery() {
             <span>NEAREST MATCH IN THESE RESULTS</span>
             <h3>{nearest.name}</h3>
             <p>
-              {distance(nearest)} ·{" "}
-              {availableConnectors(nearest, connector, power, now)} connectors
+              {distance(nearest)} · {availabilityCount(nearest)} connectors
               reported available. Confirm before travel.
             </p>
           </div>
@@ -863,13 +901,7 @@ export default function LiveDiscovery() {
               >
                 <div className="station-preview-top">
                   <PlugZap size={22} />
-                  <span>
-                    {availableConnectors(s, connector, power, now) > 0
-                      ? `${availableConnectors(s, connector, power, now)} reported available`
-                      : s.status && s.status !== "OPERATIONAL"
-                        ? s.status.replaceAll("_", " ").toLowerCase()
-                        : "Availability unconfirmed"}
-                  </span>
+                  <span>{availabilityLabel(s, now, vehicle)}</span>
                 </div>
                 <button
                   className="station-name"
@@ -879,6 +911,21 @@ export default function LiveDiscovery() {
                   <ArrowUpRight size={19} />
                 </button>
                 <p>{s.address}</p>
+                <p className="vehicle-match">
+                  {compatibility(s, vehicle) === "compatible"
+                    ? "Connector matches your selected vehicle connections"
+                    : vehicle.length
+                      ? "Vehicle compatibility needs confirmation"
+                      : "Choose My EV connections to check fit"}
+                </p>
+                <label className="compare-check">
+                  <input
+                    type="checkbox"
+                    checked={compareIds.includes(s.id)}
+                    onChange={() => toggleCompare(s.id)}
+                  />
+                  Compare this place
+                </label>
                 <span className="compatibility-badge">
                   {stationCategory(s) === "swap"
                     ? "Battery swap · check supported vehicle"
@@ -1005,15 +1052,8 @@ export default function LiveDiscovery() {
               stations={filtered}
               position={position}
               selected={selected}
-              fallback={mapUrl}
-              title={
-                mode === "you"
-                  ? "Google map of your captured location"
-                  : "Interactive Google map of charging stations"
-              }
               onSelect={(s) => void focusStation(s)}
               focusYou={mode === "you"}
-              route={mode === "route"}
               onMode={setSynchronized}
               onProvider={setMapProvider}
               roadRoute={mode === "route" ? roadRoute : null}
@@ -1139,6 +1179,50 @@ export default function LiveDiscovery() {
                   {distance(selected)}
                 </p>
               )}
+              <section className="availability-check">
+                <h4>{availabilityLabel(selected, now, vehicle)}</h4>
+                <p>
+                  Opening hours do not mean a free connector. Public mapped
+                  places cannot be reserved through ChargeNeighbour.
+                </p>
+                <button
+                  type="button"
+                  className="button outline"
+                  disabled={detailBusy}
+                  onClick={() =>
+                    selected.source === "google"
+                      ? void focusStation(selected)
+                      : setChoiceError(
+                          "This source has no live connector feed. Contact the operator before leaving and keep a backup stop.",
+                        )
+                  }
+                >
+                  Recheck supplied details
+                </button>
+                <p>
+                  Safety review: public mapped place, not a reviewed
+                  ChargeNeighbour host. Price unconfirmed unless the operator
+                  supplies an actual quote.
+                </p>
+                <a className="text-link" href="/hosts">
+                  See participating hosts and their reviewed price information
+                </a>
+                <h4>Keep a backup stop</h4>
+                {filtered
+                  .filter((s) => s.id !== selected.id)
+                  .slice(0, 2)
+                  .map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      className="button outline"
+                      onClick={() => void focusStation(s)}
+                    >
+                      {s.name} · {distance(s) || "distance needs GPS"} ·
+                      availability unconfirmed
+                    </button>
+                  ))}
+              </section>
               {detailBusy && (
                 <p role="status">Loading Google photos, ratings and reviews…</p>
               )}
@@ -1279,6 +1363,45 @@ export default function LiveDiscovery() {
             </div>
           )}
         </div>
+      </div>
+      {!!compareIds.length && (
+        <div className="compare-tray">
+          <a className="button dark" href="#charger-comparison">
+            Compare selected ({compareIds.length}/3)
+          </a>
+          <button type="button" onClick={() => setCompareIds([])}>
+            Clear selection
+          </button>
+        </div>
+      )}
+      <div id="charger-comparison">
+        <Comparison
+          items={stations
+            .filter((s) => compareIds.includes(s.id))
+            .map((s): Choice => ({
+              id: s.id,
+              name: s.name,
+              connector: s.connectors.length
+                ? s.connectors.map((c) => connectorName(c.type)).join(", ")
+                : "Connector unknown",
+              power: s.connectors.some((c) => c.maxChargeRateKw)
+                ? s.connectors
+                    .filter((c) => c.maxChargeRateKw)
+                    .map((c) => `${c.maxChargeRateKw} kW`)
+                    .join(", ")
+                : "Power unknown",
+              distance: distance(s) || "Use GPS for road distance and time",
+              availability: availabilityLabel(s, now, vehicle),
+              review: "Public mapped place · no ChargeNeighbour site review",
+              scope:
+                "Operator quote required. Fees and total price unconfirmed.",
+            }))}
+          onRemove={toggleCompare}
+          onChoose={(id) => {
+            const station = stations.find((s) => s.id === id);
+            if (station) void focusStation(station);
+          }}
+        />
       </div>
       <dialog
         ref={photoDialog}

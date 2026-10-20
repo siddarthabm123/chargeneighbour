@@ -182,6 +182,7 @@ export default function OperatorConsole() {
         "metering",
         "access",
         "support",
+        "pricing",
       ].map((k) => [k, f.get(k) === "on"]),
     );
     void act({
@@ -403,10 +404,13 @@ export default function OperatorConsole() {
                 "metering",
                 "access",
                 "support",
+                "pricing",
               ].map((k) => (
                 <label className="checkbox-label" key={k}>
                   <input type="checkbox" name={k} required />
-                  Actual {k} review completed and evidence available
+                  {k === "pricing"
+                    ? "All-in rate reviewed: disclosed fees and applicable taxes included, with no additional mandatory charge"
+                    : `Actual ${k} review completed and evidence available`}
                 </label>
               ))}
               <label>

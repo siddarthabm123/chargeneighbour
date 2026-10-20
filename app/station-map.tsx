@@ -67,11 +67,8 @@ export default function StationMap({
   stations,
   position,
   selected,
-  fallback,
-  title,
   onSelect,
   focusYou = false,
-  route = false,
   onMode,
   onProvider,
   roadRoute,
@@ -79,11 +76,8 @@ export default function StationMap({
   stations: Station[];
   position: Point | null;
   selected: Station | null;
-  fallback: string;
-  title: string;
   onSelect: (station: Station) => void;
   focusYou?: boolean;
-  route?: boolean;
   onMode: (synchronized: boolean) => void;
   onProvider: (provider: "google" | "openstreetmap") => void;
   roadRoute?: RoadRoute | null;
@@ -234,21 +228,17 @@ export default function StationMap({
         className="controlled-map"
         role="region"
         aria-label="Station map with filtered charger markers"
-        hidden={!ready || (route && !roadRoute)}
+        hidden={failed}
       />
-      {(!ready || (route && !roadRoute)) && (
-        <iframe
-          src={fallback}
-          title={title}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
+      {!ready && !failed && (
+        <p className="map-fallback-note" role="status">
+          Loading the filtered station map…
+        </p>
       )}
       {failed && (
         <p className="map-fallback-note" role="status">
-          The synchronized map could not load. The Google map below uses its own
-          results; filters apply to the station cards.
+          The synchronized map could not load. The list still shows your
+          filtered results. Retry your connection or continue using the list.
         </p>
       )}
     </>

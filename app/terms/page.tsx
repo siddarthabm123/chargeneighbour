@@ -13,7 +13,7 @@ export default function Terms() {
       </p>
       <h2>What is available</h2>
       <p>
-        You can discover public stations through Google Maps, apply to host,
+        You can discover public stations through the in-site map, apply to host,
         register interest and send support requests. Google listings are
         independent public information; they are not automatically
         ChargeNeighbour partners. A host application does not establish
@@ -24,8 +24,11 @@ export default function Terms() {
         Confirm connector compatibility, operating hours, current price and
         access with the operator. “Open” refers to opening hours, not a free
         connector. Reported connector counts expire in this interface after 15
-        minutes and may change before arrival. Card distances are straight-line
-        estimates. Use Google driving directions for the road route. This
+        minutes and may change before arrival. Road distance and time are
+        provider estimates without live traffic. When a road estimate is not
+        available, the site says so; a nearby result is not a guaranteed road
+        route or free charger. Vehicle connection preferences help filter known
+        mismatches, and unknown specifications still need confirmation. This
         service is not emergency assistance.
       </p>
       <h2>Host responsibilities</h2>
@@ -44,6 +47,15 @@ export default function Terms() {
         cancellation/refund conditions and support arrangements must be shown
         before you commit. Payment status is verified on the server. No charges
         apply to host applications or pilot interest.
+      </p>
+      <p>
+        Participating-host requests require supported Type 2 AC connections and
+        a reviewed all-in energy rate. The server rechecks the displayed quote
+        and a reservation stores its agreed rate. Estimated charges use a chosen
+        energy quantity; the actual charge uses supervised meter readings. No
+        automatic payment is taken when requesting a time. A manual review or a
+        confirmed booking is not an electrical safety guarantee or a live
+        connector-status feed.
       </p>
       <p>
         Until a commercial policy is published, do not send money to anyone

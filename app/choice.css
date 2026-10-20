@@ -1,0 +1,178 @@
+.vehicle-picker {
+  margin: 12px 0;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}
+.vehicle-picker summary {
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 44px;
+  align-content: center;
+}
+.vehicle-picker p,
+.schedule-status {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.vehicle-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.vehicle-options label,
+.compare-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.vehicle-options input,
+.compare-check input {
+  width: 22px;
+  height: 22px;
+  accent-color: #214c36;
+  flex-shrink: 0;
+}
+.vehicle-match {
+  color: #33533c;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.charger-comparison {
+  padding: 24px;
+  margin: 24px 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  scroll-margin-top: 20px;
+}
+.charger-comparison h3 {
+  font-size: 25px;
+  margin: 0 0 16px;
+}
+.charger-comparison p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.comparison-energy {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+  font-size: 16px;
+}
+.comparison-energy input {
+  width: 100px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-height: 48px;
+  font-size: 17px;
+  background: white;
+}
+.comparison-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.charger-comparison table {
+  border-collapse: collapse;
+  min-width: 640px;
+  width: 100%;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.charger-comparison th,
+.charger-comparison td {
+  text-align: left;
+  vertical-align: top;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  min-width: 155px;
+  max-width: 240px;
+  overflow-wrap: anywhere;
+}
+.charger-comparison thead th {
+  background: #edf3e7;
+}
+.charger-comparison th button {
+  display: block;
+  text-decoration: underline;
+  min-height: 44px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+.compare-tray {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  background: #edf3e7;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 18px;
+}
+.compare-tray button {
+  min-height: 44px;
+  text-decoration: underline;
+}
+.availability-check {
+  padding-block: 16px;
+  border-block: 1px solid var(--line);
+  margin-block: 20px;
+}
+.availability-check h4 {
+  font-size: 18px;
+  margin: 12px 0;
+}
+.availability-check p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.availability-check .button {
+  margin-bottom: 10px;
+  white-space: normal;
+}
+.feature-matrix {
+  display: grid;
+  gap: 20px;
+}
+.feature-matrix article {
+  border-top: 1px solid var(--line);
+  padding: 20px 0;
+}
+.feature-matrix h2 {
+  font-size: 24px;
+}
+@media (max-width: 760px) {
+  .vehicle-picker {
+    padding: 8px 14px;
+  }
+  .vehicle-picker summary {
+    font-size: 15px;
+  }
+  .charger-comparison {
+    padding: 16px;
+  }
+  .compare-tray {
+    flex-wrap: wrap;
+  }
+  .compare-tray .button {
+    font-size: 15px;
+    min-height: 48px;
+  }
+  .live-discovery:has(.compare-tray) {
+    padding-bottom: 20px;
+  }
+  .comparison-scroll:focus-visible {
+    outline: 2px solid #214c36;
+  }
+}

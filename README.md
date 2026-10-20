@@ -16,6 +16,8 @@ Drivers can explore the in-site station map and apply for the pilot. Hosts can s
 
 ### Current capabilities
 
+The five customer problems and included safeguards are documented at [Problems & solutions](https://chargeneighbour-theta.vercel.app/features) and in the [release matrix](docs/problem-solutions.md). This release adds a per-tab EV connector profile, matching-connector availability labels, backup choices, up to three charger comparisons, same-kWh estimates and verified host-owner confirmation/decline. Host schedules refresh every 30 seconds while visible. No live charger telemetry is connected.
+
 The mobile homepage opens directly on discovery. An expandable station sheet, larger touch controls, unknown-specification labels, separate battery-swap filtering and the clearly labelled station demo work without Google billing. Install metadata and a static offline notice are included. The app does not cache private accounts, GPS, photos or live availability for offline use.
 
 Hosts may separately consent to publication of their reviewed photo. Operators can publish that photo through an approved host listing without entering a manual image URL. Private evidence and exact GPS stay protected. A scheduled GitHub production health workflow checks the public service every six hours; notification delivery follows the repository owner’s GitHub settings.
@@ -28,6 +30,8 @@ Hosts may separately consent to publication of their reviewed photo. Operators c
 | Billing-free station demo            | “Try station demo” opens AI concept image views, example charger details and explicitly fictional reviews; also offered separately when a real station has no photos. No sample records, ratings or locations are added to real search results. |
 | Synchronized filtered markers        | Active with Leaflet/OpenStreetMap; Google mode requires its separate restricted browser key and map ID                                                                                                                                          |
 | Host applications and pilot interest | Verified account ownership, mandatory private charger photo + fresh on-site GPS evidence for new hosts, database enforcement, manual review and withdrawal                                                                                      |
+| Vehicle fit and comparison           | Choose supported EV connectors; known mismatches are excluded, unknown fit remains explicit. Compare up to three options; supplied host rates support same-energy estimates and sorting.                                                        |
+| Host review and price safeguards     | Public manual-check scope/date, required all-in pricing review, server rate recheck and locked reservation rate. Physical inspection and operating approval remain required.                                                                    |
 | Email sign-in                        | Supabase callback configured; **custom production SMTP remains required** for general-public delivery                                                                                                                                           |
 | Private support                      | No sign-in required; private receipt token, protected queue and operator responses                                                                                                                                                              |
 | Operator workspace                   | Host approvals, offered schedules, sessions, support, campaign counts and settlement records; requires an explicitly trusted account UUID                                                                                                       |
@@ -45,7 +49,7 @@ No public Google station is automatically a ChargeNeighbour partner. No fabricat
 
 ### Public and private pages
 
-- Public: `/`, `/hosts`, `/pilot`, `/privacy`, `/terms`, `/support`, `/status`
+- Public: `/`, `/features`, `/hosts`, `/pilot`, `/privacy`, `/terms`, `/support`, `/status`
 - Account applications: homepage → My activity
 - Operator workspace: `/operator`, restricted to trusted Supabase app metadata or the private `ADMIN_USER_IDS` UUID allow-list
 - Health: `/api/health`
@@ -79,6 +83,7 @@ Apply the executable files in `supabase/migrations/` in timestamp order to a new
 ```bash
 npm run check
 node scripts/check-stations.mjs
+node scripts/check-charger-choice.mjs
 node scripts/check-safety.mjs
 node scripts/check-database.mjs
 npm run build
